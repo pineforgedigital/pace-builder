@@ -41,7 +41,7 @@ function setupNavigation() {
   document.querySelectorAll('[data-target]').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      const targetView = e.target.getAttribute('data-target');
+      const targetView = e.currentTarget.getAttribute('data-target');
       
       // State Guard Check
       if (appState.isDirty) {
