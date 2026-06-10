@@ -636,3 +636,105 @@ dialog::backdrop {
 .role-team-lead { background-color: #f57f17; color: black; border-bottom: 2px solid #fbc02d; }
 .role-scout { background-color: #1b5e20; color: white; border-bottom: 2px solid #4caf50; }
 .role-rifleman { background-color: #424242; color: white; border-bottom: 2px solid #757575; }
+
+/* ==========================================================================
+   MOBILE RESPONSIVE OVERHAUL (Adrenaline UI Standards)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* 1. Navigation Bar Restructuring */
+  header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+  }
+  
+  header h1 {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  nav a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 48px; /* Strict 48px minimum touch target */
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  nav a:hover, nav a.active {
+    background-color: var(--accent-action);
+    color: #fff;
+    border-color: var(--accent-action);
+  }
+
+  /* 2. Dashboard Grid Flattening */
+  .grid-2, .grid-3 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  main {
+    padding: 1rem;
+  }
+
+  .panel {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  /* 3. Monospace Readout and Badge Scaling */
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table, code, pre {
+    font-size: 0.85rem;
+  }
+
+  .band-badge, .role-badge {
+    margin: 0.25rem 0;
+    display: inline-block;
+  }
+
+  /* 4. Data Portability and Quick Action Buttons */
+  .btn, 
+  .btn-primary, 
+  .btn-secondary, 
+  .btn-danger, 
+  .btn-massive {
+    width: 100%;
+    min-height: 48px; /* Adrenaline UI standard */
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Prevent inline button cramming */
+  .plan-actions, .empty-state button {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .btn-massive {
+    font-size: 1.2rem;
+    padding: 1rem;
+  }
+}
