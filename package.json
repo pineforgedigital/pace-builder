@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "dexie": "^4.0.8",
     "html5-qrcode": "^2.3.8",
     "leaflet": "^1.9.4",

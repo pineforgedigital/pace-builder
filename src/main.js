@@ -2,6 +2,8 @@ import * as db from './db.js';
 import * as views from './views.js';
 import { initLocationEngine } from './locationEngine.js';
 import 'leaflet/dist/leaflet.css';
+import { inject as injectAnalytics } from '@vercel/analytics';
+import { inject as injectSpeedInsights } from '@vercel/speed-insights';
 
 // Application State
 const appState = {
@@ -17,6 +19,14 @@ document.addEventListener('DOMContentLoaded', () => {
   initLocationEngine();
   loadView('dashboard');
   if (window.lucide) window.lucide.createIcons();
+
+  // Inject Vercel Telemetry
+  try {
+    injectAnalytics();
+    injectSpeedInsights();
+  } catch (error) {
+    console.warn("Vercel telemetry disabled in local/offline environment.", error);
+  }
 });
 
 // Network Status Monitor
