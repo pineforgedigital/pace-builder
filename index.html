@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PACE Builder</title>
+    <meta name="description" content="Offline-first disaster communication planning utility." />
+    <!-- Icons (created by PWA plugin or placeholders) -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <!-- PWA Manifest will be injected by vite-plugin-pwa -->
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/src/style.css">
+  </head>
+  <body>
+    <header>
+      <h1>PACE Builder</h1>
+      <nav>
+        <a href="#" data-target="dashboard"><i data-lucide="layout-dashboard" class="tactical-icon-lg"></i> Dashboard</a>
+        <a href="#" data-target="personnel"><i data-lucide="users" class="tactical-icon-lg"></i> Personnel Roster</a>
+        <a href="#" data-target="comms"><i data-lucide="radio" class="tactical-icon-lg"></i> Comms Locker</a>
+        <a href="#" data-target="plans"><i data-lucide="file-text" class="tactical-icon-lg"></i> PACE Plans</a>
+        <a href="#" data-target="reports"><i data-lucide="mic" class="tactical-icon-lg"></i> Tactical Reports</a>
+      </nav>
+      <div id="network-status" class="status-online">ONLINE</div>
+    </header>
+
+    <main>
+      <div id="app-content">
+        <!-- Content will be injected here by router -->
+      </div>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
