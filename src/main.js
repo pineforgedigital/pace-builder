@@ -88,6 +88,12 @@ async function loadView(viewName) {
     case 'reports':
       await views.renderReportingEngine(contentArea);
       break;
+    case 'map':
+      await views.renderMap(contentArea);
+      break;
+    case 'settings':
+      await views.renderSettings(contentArea);
+      break;
     default:
       contentArea.innerHTML = `<h2>Error</h2><p>View not found.</p>`;
   }

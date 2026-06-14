@@ -27,6 +27,19 @@ db.version(5).stores({
   personnel: '++id, name, callSign, role'
 });
 
+db.version(6).stores({
+  globalSettings: 'key, value'
+});
+
+export async function saveSetting(key, value) {
+  return await db.globalSettings.put({ key, value });
+}
+
+export async function getSetting(key) {
+  const record = await db.globalSettings.get(key);
+  return record ? record.value : null;
+}
+
 // -----------------------------------------------------------------------------
 // Disaster Scenario Enumerations
 // -----------------------------------------------------------------------------

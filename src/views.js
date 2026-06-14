@@ -18,6 +18,37 @@ export function getBandFromFrequency(freqStr) {
   return 'UNKNOWN';
 }
 
+function downloadCSV(filename, dataArray, headers) {
+  if (!dataArray || dataArray.length === 0) {
+    alert("No data available to export.");
+    return;
+  }
+  
+  let csvContent = headers.join(',') + '\n';
+  
+  dataArray.forEach(row => {
+    let rowValues = headers.map(header => {
+      let cell = row[header] === undefined || row[header] === null ? '' : row[header].toString();
+      cell = cell.replace(/"/g, '""');
+      if (cell.search(/("|,|\n)/g) >= 0) {
+        cell = `"${cell}"`;
+      }
+      return cell;
+    });
+    csvContent += rowValues.join(',') + '\n';
+  });
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 // --- Cleanup Mechanism ---
 let activeListeners = [];
 function addCleanupListener(element, type, handler) {
@@ -314,7 +345,10 @@ export async function renderPersonnel(container) {
   container.innerHTML = `
     <h2>Personnel Roster</h2>
     <div class="panel">
-      <h3>Saved Members</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0;">Saved Members</h3>
+        ${personnel.length > 0 ? '<button class="btn btn-secondary btn-sm" id="btn-export-personnel"><i data-lucide="download"></i> Export CSV</button>' : ''}
+      </div>
       ${tableHtml}
     </div>
     
@@ -397,6 +431,13 @@ export async function renderPersonnel(container) {
       document.getElementById('p-name').focus();
     });
   }
+
+  const exportBtn = container.querySelector('#btn-export-personnel');
+  if (exportBtn) {
+    addCleanupListener(exportBtn, 'click', () => {
+      downloadCSV('pace_personnel_roster.csv', personnel, ['id', 'name', 'callSign', 'role', 'bloodType', 'phone', 'iceContact', 'allergies', 'rendezvousPoint']);
+    });
+  }
 }
 
 // --- Comms Locker ---
@@ -453,7 +494,10 @@ export async function renderComms(container) {
   container.innerHTML = `
     <h2>Comms Locker</h2>
     <div class="panel">
-      <h3>Inventory</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0;">Inventory</h3>
+        ${radios.length > 0 ? '<button class="btn btn-secondary btn-sm" id="btn-export-comms"><i data-lucide="download"></i> Export CSV</button>' : ''}
+      </div>
       ${tableHtml}
     </div>
     
@@ -518,6 +562,13 @@ export async function renderComms(container) {
       document.getElementById('r-model').focus();
     });
   }
+
+  const exportBtn = container.querySelector('#btn-export-comms');
+  if (exportBtn) {
+    addCleanupListener(exportBtn, 'click', () => {
+      downloadCSV('pace_comms_locker.csv', radios, ['id', 'hardwareModel', 'frequency', 'supportedBand', 'tones', 'powerOutput']);
+    });
+  }
 }
 
 // --- PACE Plans ---
@@ -525,6 +576,10 @@ export async function renderPacePlans(container) {
   cleanupListeners();
   
   const plans = await db.getAllPlans();
+  const defaultNCS = await db.getSetting('defaultNCS') || '';
+  const defaultSchedule = await db.getSetting('defaultSchedule') || '';
+  const defaultCrypto = await db.getSetting('defaultCrypto') || '';
+
   let planListHtml = '';
   if (plans.length === 0) {
     planListHtml = `
@@ -574,17 +629,17 @@ export async function renderPacePlans(container) {
           <div class="grid-2">
             <div class="form-group">
               <label>Net Control Station (NCS)</label>
-              <input type="text" id="pace-ncs" placeholder="e.g. TOC / Command">
+              <input type="text" id="pace-ncs" placeholder="e.g. TOC / Command" value="${defaultNCS}">
             </div>
             <div class="form-group">
               <label>Comm Window / Schedule</label>
-              <input type="text" id="pace-schedule" placeholder="e.g. Every 4 hrs at top of hour">
+              <input type="text" id="pace-schedule" placeholder="e.g. Every 4 hrs at top of hour" value="${defaultSchedule}">
             </div>
           </div>
           <div class="grid-2">
             <div class="form-group">
               <label>Authentication / Crypto</label>
-              <input type="text" id="pace-crypto" placeholder="e.g. Daily challenge / AES Key">
+              <input type="text" id="pace-crypto" placeholder="e.g. Daily challenge / AES Key" value="${defaultCrypto}">
             </div>
             <div class="form-group">
               <label>No-Comm / Fallback Procedure</label>
@@ -909,7 +964,7 @@ export async function renderPacePlans(container) {
         modalQRShare.showModal();
       } catch (err) {
         console.error("QR Generation failed:", err);
-        alert("Failed to generate QR code.");
+        alert("Error generating SITREP PDF.");
       }
     });
   });
@@ -1356,4 +1411,122 @@ export async function renderReportingEngine(container) {
   });
 
   initForm('SITREP');
+}
+
+// --- Global Settings ---
+export async function renderSettings(container) {
+  cleanupListeners();
+
+  const defaultNCS = await db.getSetting('defaultNCS') || '';
+  const defaultSchedule = await db.getSetting('defaultSchedule') || '';
+  const defaultCrypto = await db.getSetting('defaultCrypto') || '';
+  const userCallSign = await db.getSetting('userCallSign') || '';
+
+  container.innerHTML = `
+    <h2>Global Settings</h2>
+    <div class="panel">
+      <h3>Operational Defaults</h3>
+      <p class="text-muted" style="margin-bottom: 1rem;">These values will automatically pre-fill when you create a new PACE Plan or Tactical Report.</p>
+      
+      <form id="form-settings">
+        <div class="grid-2">
+          <div class="form-group">
+            <label>User Call Sign</label>
+            <input type="text" id="set-callsign" value="${userCallSign}">
+          </div>
+          <div class="form-group">
+            <label>Default Net Control Station (NCS)</label>
+            <input type="text" id="set-ncs" value="${defaultNCS}">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Default Comm Window / Schedule</label>
+            <input type="text" id="set-schedule" value="${defaultSchedule}">
+          </div>
+          <div class="form-group">
+            <label>Default Crypto / Authentication</label>
+            <input type="text" id="set-crypto" value="${defaultCrypto}">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+      </form>
+    </div>
+  `;
+
+  const form = container.querySelector('#form-settings');
+  addCleanupListener(form, 'submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-settings');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+
+    await db.saveSetting('userCallSign', document.getElementById('set-callsign').value);
+    await db.saveSetting('defaultNCS', document.getElementById('set-ncs').value);
+    await db.saveSetting('defaultSchedule', document.getElementById('set-schedule').value);
+    await db.saveSetting('defaultCrypto', document.getElementById('set-crypto').value);
+
+    setTimeout(() => {
+      btn.textContent = 'Saved!';
+      btn.className = 'btn btn-primary';
+      setTimeout(() => {
+        btn.textContent = 'Save Settings';
+        btn.disabled = false;
+        btn.className = 'btn btn-primary';
+      }, 2000);
+    }, 500);
+  });
+}
+
+// --- Tactical Map ---
+export async function renderMap(container) {
+  cleanupListeners();
+
+  container.innerHTML = `
+    <h2>Tactical Map</h2>
+    <div class="panel" style="padding: 0; overflow: hidden; border-radius: 8px;">
+      <div id="map-container" style="width: 100%; height: 60vh; min-height: 400px; background-color: #222;"></div>
+    </div>
+  `;
+
+  // We need to wait a tick for the DOM to render the #map-container before initializing Leaflet
+  setTimeout(async () => {
+    const mapElement = document.getElementById('map-container');
+    if (!mapElement) return;
+
+    // Default center (null island)
+    let centerLat = 0;
+    let centerLng = 0;
+    let initialZoom = 2;
+
+    // Fetch location cache from db
+    const locations = await db.db.locationCache.orderBy('timestamp').reverse().toArray();
+
+    if (locations && locations.length > 0) {
+      centerLat = locations[0].latitude;
+      centerLng = locations[0].longitude;
+      initialZoom = 14;
+    }
+
+    if (!L) {
+      console.warn('Leaflet not loaded.');
+      mapElement.innerHTML = '<div style="padding: 2rem; text-align: center;">Map engine not available offline.</div>';
+      return;
+    }
+
+    const map = L.map('map-container').setView([centerLat, centerLng], initialZoom);
+
+    // Use a high-contrast dark tile layer for "Adrenaline UI"
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+    }).addTo(map);
+
+    // Plot all cached locations
+    locations.forEach(loc => {
+      const date = new Date(loc.timestamp).toLocaleString();
+      L.marker([loc.latitude, loc.longitude])
+        .addTo(map)
+        .bindPopup(\`<b>GPS Ping</b><br>\${date}<br>Acc: \${Math.round(loc.accuracy)}m\`);
+    });
+  }, 100);
 }
