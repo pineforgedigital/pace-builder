@@ -1526,7 +1526,7 @@ export async function renderMap(container) {
       const date = new Date(loc.timestamp).toLocaleString();
       L.marker([loc.latitude, loc.longitude])
         .addTo(map)
-        .bindPopup(\`<b>GPS Ping</b><br>\${date}<br>Acc: \${Math.round(loc.accuracy)}m\`);
+        .bindPopup(`<b>GPS Ping</b><br>${date}<br>Acc: ${Math.round(loc.accuracy)}m`);
     });
   }, 100);
 }
