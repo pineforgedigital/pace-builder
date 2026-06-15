@@ -1492,6 +1492,21 @@ export async function renderMap(container) {
       </div>
       <div id="map-container" style="width: 100%; height: 60vh; min-height: 400px; background-color: #222;"></div>
     </div>
+
+    <!-- Map Feature Modal -->
+    <dialog id="modal-map-feature">
+      <h3 id="modal-map-title">Name Tactical Feature</h3>
+      <form id="form-map-feature">
+        <div class="form-group">
+          <label>Designation / Name</label>
+          <input type="text" id="map-feature-name" required autocomplete="off">
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="btn cancel-btn" id="btn-cancel-feature">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Feature</button>
+        </div>
+      </form>
+    </dialog>
   `;
 
   if (window.lucide) window.lucide.createIcons();
@@ -1603,12 +1618,48 @@ export async function renderMap(container) {
       }
     });
 
+    const modalFeature = container.querySelector('#modal-map-feature');
+    const formFeature = container.querySelector('#form-map-feature');
+    const inputFeature = container.querySelector('#map-feature-name');
+    const titleFeature = container.querySelector('#modal-map-title');
+    const btnCancelFeature = container.querySelector('#btn-cancel-feature');
+
+    const promptFeatureName = (title) => {
+      return new Promise((resolve) => {
+        titleFeature.textContent = title;
+        inputFeature.value = '';
+        modalFeature.showModal();
+        setTimeout(() => inputFeature.focus(), 50);
+        
+        const cleanup = () => {
+          formFeature.removeEventListener('submit', onSubmit);
+          btnCancelFeature.removeEventListener('click', onCancel);
+          modalFeature.close();
+        };
+
+        const onSubmit = (e) => {
+          e.preventDefault();
+          const val = inputFeature.value.trim();
+          cleanup();
+          resolve(val || null);
+        };
+
+        const onCancel = () => {
+          cleanup();
+          resolve(null);
+        };
+
+        formFeature.addEventListener('submit', onSubmit);
+        btnCancelFeature.addEventListener('click', onCancel);
+      });
+    };
+
     // Map Click Handler for Drawing
     map.on('click', async (e) => {
       if (currentMode === 'pan') return;
 
       if (currentMode === 'waypoint') {
-        const name = prompt("Enter Waypoint Name:");
+        const name = await promptFeatureName("Enter Waypoint Name:");
         if (!name) return;
         
         const feature = { type: 'waypoint', name, coordinates: [e.latlng.lat, e.latlng.lng] };
@@ -1634,7 +1685,7 @@ export async function renderMap(container) {
     // Right-Click (ContextMenu) to finish lines
     map.on('contextmenu', async (e) => {
       if (currentMode === 'line' && activePoints.length > 1) {
-        const name = prompt("Enter Phase Line Name:");
+        const name = await promptFeatureName("Enter Phase Line Name:");
         if (name) {
           const feature = { type: 'line', name, coordinates: [...activePoints] };
           const id = await db.addMapFeature(feature);
