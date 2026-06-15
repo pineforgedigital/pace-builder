@@ -425,6 +425,47 @@ input[type="checkbox"] {
   margin-right: 0.5rem;
 }
 
+/* Map Toolbar */
+.map-toolbar {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.map-toolbar button {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  color: var(--text-main);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.map-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.map-toolbar button.active {
+  background: rgba(249, 115, 22, 0.2);
+  border-color: var(--accent-action);
+  color: var(--accent-action);
+}
+
 /* ==========================================================================
    MOBILE RESPONSIVE OVERHAUL
    ========================================================================== */

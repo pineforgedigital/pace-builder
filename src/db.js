@@ -31,6 +31,23 @@ db.version(6).stores({
   globalSettings: 'key, value'
 });
 
+db.version(7).stores({
+  mapFeatures: '++id, type, name, coordinates, timestamp'
+});
+
+export async function addMapFeature(feature) {
+  feature.timestamp = Date.now();
+  return await db.mapFeatures.add(feature);
+}
+
+export async function deleteMapFeature(id) {
+  return await db.mapFeatures.delete(id);
+}
+
+export async function getAllMapFeatures() {
+  return await db.mapFeatures.toArray();
+}
+
 export async function saveSetting(key, value) {
   return await db.globalSettings.put({ key, value });
 }

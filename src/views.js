@@ -1484,10 +1484,17 @@ export async function renderMap(container) {
 
   container.innerHTML = `
     <h2>Tactical Map</h2>
-    <div class="panel" style="padding: 0; overflow: hidden; border-radius: 8px;">
+    <div class="panel" style="padding: 0; position: relative; overflow: hidden; border-radius: 8px;">
+      <div class="map-toolbar">
+        <button id="tool-pan" class="active" title="Pan Map"><i data-lucide="mouse-pointer-2"></i></button>
+        <button id="tool-waypoint" title="Drop Waypoint"><i data-lucide="map-pin"></i></button>
+        <button id="tool-line" title="Draw Phase Line"><i data-lucide="activity"></i></button>
+      </div>
       <div id="map-container" style="width: 100%; height: 60vh; min-height: 400px; background-color: #222;"></div>
     </div>
   `;
+
+  if (window.lucide) window.lucide.createIcons();
 
   // We need to wait a tick for the DOM to render the #map-container before initializing Leaflet
   setTimeout(async () => {
@@ -1514,19 +1521,126 @@ export async function renderMap(container) {
       return;
     }
 
-    const map = L.map('map-container').setView([centerLat, centerLng], initialZoom);
+    const map = L.map('map-container', { doubleClickZoom: false }).setView([centerLat, centerLng], initialZoom);
 
     // Use a high-contrast dark tile layer for the premium tactical UI
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
     }).addTo(map);
 
-    // Plot all cached locations
+    // Plot all cached GPS pings as small subtle circles instead of big markers
     locations.forEach(loc => {
       const date = new Date(loc.timestamp).toLocaleString();
-      L.marker([loc.latitude, loc.longitude])
-        .addTo(map)
-        .bindPopup(`<b>GPS Ping</b><br>${date}<br>Acc: ${Math.round(loc.accuracy)}m`);
+      L.circleMarker([loc.latitude, loc.longitude], {
+        radius: 4,
+        color: '#f97316',
+        fillColor: '#f97316',
+        fillOpacity: 0.5,
+        weight: 1
+      })
+      .addTo(map)
+      .bindPopup(`<b>GPS Ping</b><br>${date}<br>Acc: ${Math.round(loc.accuracy)}m`);
     });
+
+    // Drawing Engine State
+    let currentMode = 'pan'; // pan, waypoint, line
+    let activePolyline = null;
+    let activePoints = [];
+
+    const btnPan = document.getElementById('tool-pan');
+    const btnWaypoint = document.getElementById('tool-waypoint');
+    const btnLine = document.getElementById('tool-line');
+
+    const updateToolbar = (mode) => {
+      currentMode = mode;
+      btnPan.classList.toggle('active', mode === 'pan');
+      btnWaypoint.classList.toggle('active', mode === 'waypoint');
+      btnLine.classList.toggle('active', mode === 'line');
+      
+      if (mode !== 'line' && activePolyline) {
+        map.removeLayer(activePolyline);
+        activePolyline = null;
+        activePoints = [];
+      }
+      
+      mapElement.style.cursor = mode === 'pan' ? 'grab' : 'crosshair';
+    };
+
+    addCleanupListener(btnPan, 'click', () => updateToolbar('pan'));
+    addCleanupListener(btnWaypoint, 'click', () => updateToolbar('waypoint'));
+    addCleanupListener(btnLine, 'click', () => updateToolbar('line'));
+
+    // Render Saved Features
+    const savedFeatures = await db.getAllMapFeatures();
+    
+    const bindFeatureClick = (layer, feature) => {
+      layer.on('click', async (e) => {
+        if (currentMode !== 'pan') return;
+        L.DomEvent.stopPropagation(e);
+        if (confirm(`Delete tactical feature: ${feature.name}?`)) {
+          await db.deleteMapFeature(feature.id);
+          map.removeLayer(layer);
+        }
+      });
+    };
+
+    savedFeatures.forEach(f => {
+      if (f.type === 'waypoint') {
+        const marker = L.marker(f.coordinates).addTo(map).bindTooltip(f.name, { permanent: true, direction: 'top' });
+        bindFeatureClick(marker, f);
+      } else if (f.type === 'line') {
+        const line = L.polyline(f.coordinates, { color: '#ea580c', weight: 4 }).addTo(map).bindTooltip(f.name, { sticky: true });
+        bindFeatureClick(line, f);
+      }
+    });
+
+    // Map Click Handler for Drawing
+    map.on('click', async (e) => {
+      if (currentMode === 'pan') return;
+
+      if (currentMode === 'waypoint') {
+        const name = prompt("Enter Waypoint Name:");
+        if (!name) return;
+        
+        const feature = { type: 'waypoint', name, coordinates: [e.latlng.lat, e.latlng.lng] };
+        const id = await db.addMapFeature(feature);
+        feature.id = id;
+        
+        const marker = L.marker(feature.coordinates).addTo(map).bindTooltip(feature.name, { permanent: true, direction: 'top' });
+        bindFeatureClick(marker, feature);
+        
+        updateToolbar('pan'); // auto-switch back to pan
+      }
+      else if (currentMode === 'line') {
+        activePoints.push([e.latlng.lat, e.latlng.lng]);
+        
+        if (!activePolyline) {
+          activePolyline = L.polyline(activePoints, { color: '#ea580c', weight: 4, dashArray: '10, 10' }).addTo(map);
+        } else {
+          activePolyline.setLatLngs(activePoints);
+        }
+      }
+    });
+
+    // Right-Click (ContextMenu) to finish lines
+    map.on('contextmenu', async (e) => {
+      if (currentMode === 'line' && activePoints.length > 1) {
+        const name = prompt("Enter Phase Line Name:");
+        if (name) {
+          const feature = { type: 'line', name, coordinates: [...activePoints] };
+          const id = await db.addMapFeature(feature);
+          feature.id = id;
+          
+          const line = L.polyline(feature.coordinates, { color: '#ea580c', weight: 4 }).addTo(map).bindTooltip(feature.name, { sticky: true });
+          bindFeatureClick(line, feature);
+        }
+        
+        map.removeLayer(activePolyline);
+        activePolyline = null;
+        activePoints = [];
+        updateToolbar('pan');
+      }
+    });
+
   }, 100);
 }
