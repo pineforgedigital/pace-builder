@@ -320,7 +320,10 @@ export async function renderPersonnel(container) {
         <td><span class="badge badge-stable">${p.callSign}</span></td>
         <td>${p.phone || 'N/A'}<br><small>ICE: ${p.iceContact || 'N/A'}</small></td>
         <td>${p.bloodType || 'UNKNOWN'}<br><small>Allergies: ${p.allergies || 'None'}</small></td>
-        <td><button class="btn btn-danger btn-delete-personnel btn-sm" data-id="${p.id}">Delete</button></td>
+        <td>
+          <button class="btn btn-secondary btn-edit-personnel btn-sm" data-id="${p.id}" style="margin-right: 5px;">Edit</button>
+          <button class="btn btn-danger btn-delete-personnel btn-sm" data-id="${p.id}">Delete</button>
+        </td>
       </tr>
       `;
     }).join('');
@@ -395,7 +398,7 @@ export async function renderPersonnel(container) {
           <div class="form-group"><label>Allergies</label><input type="text" id="p-allergies" placeholder="e.g., NKA"></div>
           <div class="form-group"><label>Rendezvous Point</label><input type="text" id="p-rv"></div>
         </div>
-        <button type="submit" class="btn btn-primary">Save Member</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-personnel">Save Member</button>
       </form>
     </div>
   `;
@@ -403,7 +406,8 @@ export async function renderPersonnel(container) {
   const form = container.querySelector('#form-personnel');
   addCleanupListener(form, 'submit', async (e) => {
     e.preventDefault();
-    await db.addPersonnel({
+    const editId = form.dataset.editId ? parseInt(form.dataset.editId) : null;
+    const pData = {
       name: document.getElementById('p-name').value,
       callSign: document.getElementById('p-callsign').value,
       role: document.getElementById('p-role').value,
@@ -412,7 +416,14 @@ export async function renderPersonnel(container) {
       iceContact: document.getElementById('p-ice').value,
       allergies: document.getElementById('p-allergies').value,
       rendezvousPoint: document.getElementById('p-rv').value
-    });
+    };
+    
+    if (editId) {
+      await db.updatePersonnel(editId, pData);
+      delete form.dataset.editId;
+    } else {
+      await db.addPersonnel(pData);
+    }
     renderPersonnel(container); // Re-render
   });
 
@@ -422,6 +433,30 @@ export async function renderPersonnel(container) {
       if (await window.sysConfirm('Delete this person? This will safely remove them from any existing PACE plans.')) {
         await db.deletePersonnel(id);
         renderPersonnel(container);
+      }
+    });
+  });
+
+  container.querySelectorAll('.btn-edit-personnel').forEach(btn => {
+    addCleanupListener(btn, 'click', async (e) => {
+      const id = parseInt(e.target.getAttribute('data-id'));
+      const person = personnel.find(p => p.id === id);
+      if (person) {
+        document.getElementById('p-name').value = person.name || '';
+        document.getElementById('p-callsign').value = person.callSign || '';
+        document.getElementById('p-role').value = person.role || 'Other';
+        document.getElementById('p-blood').value = person.bloodType || 'UNKNOWN';
+        document.getElementById('p-phone').value = person.phone || '';
+        document.getElementById('p-ice').value = person.iceContact || '';
+        document.getElementById('p-allergies').value = person.allergies || '';
+        document.getElementById('p-rv').value = person.rendezvousPoint || '';
+        
+        form.dataset.editId = id;
+        const submitBtn = document.getElementById('btn-submit-personnel');
+        submitBtn.textContent = 'Update Member';
+        submitBtn.classList.add('pulse');
+        setTimeout(() => submitBtn.classList.remove('pulse'), 1000);
+        form.scrollIntoView({ behavior: 'smooth' });
       }
     });
   });
@@ -468,7 +503,10 @@ export async function renderComms(container) {
         <td><span class="band-badge ${(r.supportedBand || r.band || 'unknown').toLowerCase()}">${r.supportedBand || r.band || 'UNKNOWN'}</span></td>
         <td>${r.tones}</td>
         <td><span class="badge ${powerBadge}">${r.powerOutput}</span></td>
-        <td><button class="btn btn-danger btn-delete-radio btn-sm" data-id="${r.id}">Delete</button></td>
+        <td>
+          <button class="btn btn-secondary btn-edit-radio btn-sm" data-id="${r.id}" style="margin-right: 5px;">Edit</button>
+          <button class="btn btn-danger btn-delete-radio btn-sm" data-id="${r.id}">Delete</button>
+        </td>
       </tr>
       `;
     }).join('');
@@ -529,7 +567,7 @@ export async function renderComms(container) {
           <label>Power Output</label>
           <input type="text" id="r-power">
         </div>
-        <button type="submit" class="btn btn-primary">Save Radio</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-radio">Save Radio</button>
       </form>
     </div>
   `;
@@ -537,13 +575,21 @@ export async function renderComms(container) {
   const form = container.querySelector('#form-radio');
   addCleanupListener(form, 'submit', async (e) => {
     e.preventDefault();
-    await db.addRadio({
+    const editId = form.dataset.editId ? parseInt(form.dataset.editId) : null;
+    const rData = {
       hardwareModel: document.getElementById('r-model').value,
       frequency: document.getElementById('r-freq').value,
       supportedBand: document.getElementById('r-supported-band').value,
       tones: document.getElementById('r-tones').value,
       powerOutput: document.getElementById('r-power').value
-    });
+    };
+    
+    if (editId) {
+      await db.updateRadio(editId, rData);
+      delete form.dataset.editId;
+    } else {
+      await db.addRadio(rData);
+    }
     renderComms(container); // Re-render
   });
 
@@ -553,6 +599,27 @@ export async function renderComms(container) {
       if (await window.sysConfirm('Delete this radio? This will safely remove it from any existing PACE plans.')) {
         await db.deleteRadio(id);
         renderComms(container);
+      }
+    });
+  });
+
+  container.querySelectorAll('.btn-edit-radio').forEach(btn => {
+    addCleanupListener(btn, 'click', async (e) => {
+      const id = parseInt(e.target.getAttribute('data-id'));
+      const radio = radios.find(r => r.id === id);
+      if (radio) {
+        document.getElementById('r-model').value = radio.hardwareModel || '';
+        document.getElementById('r-freq').value = radio.frequency || '';
+        document.getElementById('r-supported-band').value = radio.supportedBand || radio.band || 'HF';
+        document.getElementById('r-tones').value = radio.tones || '';
+        document.getElementById('r-power').value = radio.powerOutput || '';
+        
+        form.dataset.editId = id;
+        const submitBtn = document.getElementById('btn-submit-radio');
+        submitBtn.textContent = 'Update Radio';
+        submitBtn.classList.add('pulse');
+        setTimeout(() => submitBtn.classList.remove('pulse'), 1000);
+        form.scrollIntoView({ behavior: 'smooth' });
       }
     });
   });
@@ -1516,6 +1583,16 @@ export async function renderMap(container) {
         </div>
       </form>
     </dialog>
+
+    <!-- Map Feature Action Modal -->
+    <dialog id="modal-feature-action">
+      <h3 id="modal-action-title">Feature Options</h3>
+      <div class="dialog-actions" style="justify-content: center; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" id="btn-action-rename">Rename</button>
+        <button type="button" class="btn btn-danger" id="btn-action-delete">Delete</button>
+        <button type="button" class="btn cancel-btn" id="btn-action-cancel">Cancel</button>
+      </div>
+    </dialog>
   `;
 
   if (window.lucide) window.lucide.createIcons();
@@ -1684,10 +1761,22 @@ export async function renderMap(container) {
       layer.on('click', async (e) => {
         if (currentMode !== 'pan') return;
         L.DomEvent.stopPropagation(e);
-        if (await window.sysConfirm(`Delete tactical feature: ${feature.name}?`)) {
-          await db.deleteMapFeature(feature.id);
-          mapFeatureGroup.removeLayer(layer);
-          updateMapKey();
+        
+        const action = await promptFeatureAction(feature.name);
+        if (action === 'delete') {
+          if (await window.sysConfirm(`Permanently delete tactical feature: ${feature.name}?`)) {
+            await db.deleteMapFeature(feature.id);
+            mapFeatureGroup.removeLayer(layer);
+            updateMapKey();
+          }
+        } else if (action === 'rename') {
+          const newName = await promptFeatureName("Rename Feature:", feature.name);
+          if (newName && newName !== feature.name) {
+            feature.name = newName;
+            await db.updateMapFeature(feature.id, feature);
+            layer.setTooltipContent(newName);
+            updateMapKey();
+          }
         }
       });
     };
@@ -1719,10 +1808,10 @@ export async function renderMap(container) {
     const titleFeature = container.querySelector('#modal-map-title');
     const btnCancelFeature = container.querySelector('#btn-cancel-feature');
 
-    const promptFeatureName = (title) => {
+    const promptFeatureName = (title, initialValue = "") => {
       return new Promise((resolve) => {
         titleFeature.textContent = title;
-        inputFeature.value = '';
+        inputFeature.value = initialValue;
         modalFeature.showModal();
         setTimeout(() => inputFeature.focus(), 50);
         
@@ -1746,6 +1835,34 @@ export async function renderMap(container) {
 
         formFeature.addEventListener('submit', onSubmit);
         btnCancelFeature.addEventListener('click', onCancel);
+      });
+    };
+
+    const promptFeatureAction = (featureName) => {
+      return new Promise((resolve) => {
+        const modal = container.querySelector('#modal-feature-action');
+        modal.querySelector('#modal-action-title').textContent = `${featureName}`;
+        
+        const btnRename = modal.querySelector('#btn-action-rename');
+        const btnDelete = modal.querySelector('#btn-action-delete');
+        const btnCancel = modal.querySelector('#btn-action-cancel');
+        
+        const cleanup = () => {
+          btnRename.removeEventListener('click', onRename);
+          btnDelete.removeEventListener('click', onDelete);
+          btnCancel.removeEventListener('click', onCancel);
+          modal.close();
+        };
+        
+        const onRename = () => { cleanup(); resolve('rename'); };
+        const onDelete = () => { cleanup(); resolve('delete'); };
+        const onCancel = () => { cleanup(); resolve(null); };
+        
+        btnRename.addEventListener('click', onRename);
+        btnDelete.addEventListener('click', onDelete);
+        btnCancel.addEventListener('click', onCancel);
+        
+        modal.showModal();
       });
     };
 

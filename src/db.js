@@ -40,6 +40,10 @@ export async function addMapFeature(feature) {
   return await db.mapFeatures.add(feature);
 }
 
+export async function updateMapFeature(id, feature) {
+  return await db.mapFeatures.update(id, feature);
+}
+
 export async function deleteMapFeature(id) {
   return await db.mapFeatures.delete(id);
 }
