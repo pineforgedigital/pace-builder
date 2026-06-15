@@ -39,6 +39,25 @@
       </div>
     </main>
 
+    <!-- Global System Alert Modal -->
+    <dialog id="sys-alert-modal" class="global-modal">
+      <h3 id="sys-alert-title">System Alert</h3>
+      <p id="sys-alert-message" style="margin-bottom: 1.5rem;"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-primary" id="sys-alert-ok">Acknowledge</button>
+      </div>
+    </dialog>
+
+    <!-- Global System Confirm Modal -->
+    <dialog id="sys-confirm-modal" class="global-modal">
+      <h3 id="sys-confirm-title">Confirm Action</h3>
+      <p id="sys-confirm-message" style="margin-bottom: 1.5rem;"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn cancel-btn" id="sys-confirm-cancel">Cancel</button>
+        <button type="button" class="btn btn-danger" id="sys-confirm-ok">Confirm</button>
+      </div>
+    </dialog>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

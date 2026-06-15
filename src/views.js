@@ -20,7 +20,7 @@ export function getBandFromFrequency(freqStr) {
 
 function downloadCSV(filename, dataArray, headers) {
   if (!dataArray || dataArray.length === 0) {
-    alert("No data available to export.");
+    window.sysAlert("No data available to export.");
     return;
   }
   
@@ -201,11 +201,11 @@ export async function renderDashboard(container) {
     if (!file) return;
     try {
       await db.importDatabase(file);
-      alert("Database restored successfully.");
+      window.sysAlert("Database restored successfully.");
       renderDashboard(container);
     } catch (err) {
       console.error(err);
-      alert("Failed to restore database. Invalid or corrupted JSON file.");
+      window.sysAlert("Failed to restore database. Invalid or corrupted JSON file.");
     }
   });
 
@@ -259,7 +259,7 @@ export async function renderDashboard(container) {
           `;
           modalStaging.showModal();
         } catch (err) {
-          alert(err.message);
+          window.sysAlert(err.message);
         }
       },
       (errorMessage) => {
@@ -267,7 +267,7 @@ export async function renderDashboard(container) {
       }
     ).catch(err => {
       console.error(err);
-      alert("Unable to access camera.");
+      window.sysAlert("Unable to access camera.");
       modalScanQR.close();
     });
   });
@@ -287,11 +287,11 @@ export async function renderDashboard(container) {
       await ingestHandoverPayload(currentValidatedPayload);
       modalStaging.close();
       currentValidatedPayload = null;
-      alert("PACE Plan successfully imported!");
+      window.sysAlert("PACE Plan successfully imported!");
       renderDashboard(container); // Refresh to show new plan
     } catch (err) {
       console.error(err);
-      alert("Error during ingestion: " + err.message);
+      window.sysAlert("Error during ingestion: " + err.message);
     }
   });
 }
@@ -418,7 +418,7 @@ export async function renderPersonnel(container) {
   container.querySelectorAll('.btn-delete-personnel').forEach(btn => {
     addCleanupListener(btn, 'click', async (e) => {
       const id = parseInt(e.target.getAttribute('data-id'));
-      if (confirm('Delete this person? This will safely remove them from any existing PACE plans.')) {
+      if (await window.sysConfirm('Delete this person? This will safely remove them from any existing PACE plans.')) {
         await db.deletePersonnel(id);
         renderPersonnel(container);
       }
@@ -549,7 +549,7 @@ export async function renderComms(container) {
   container.querySelectorAll('.btn-delete-radio').forEach(btn => {
     addCleanupListener(btn, 'click', async (e) => {
       const id = parseInt(e.target.getAttribute('data-id'));
-      if (confirm('Delete this radio? This will safely remove it from any existing PACE plans.')) {
+      if (await window.sysConfirm('Delete this radio? This will safely remove it from any existing PACE plans.')) {
         await db.deleteRadio(id);
         renderComms(container);
       }
@@ -911,7 +911,7 @@ export async function renderPacePlans(container) {
     await db.savePlan(plan);
     renderPacePlans(container); // Re-render to update the list
     
-    alert("PACE Plan Saved Successfully!");
+    window.sysAlert("PACE Plan Saved Successfully!");
   });
 
   // Export PDF Buttons
@@ -925,7 +925,7 @@ export async function renderPacePlans(container) {
         await generatePacePDF(planId);
       } catch (error) {
         console.error("PDF Generation failed:", error);
-        alert("Failed to generate PDF. Check console.");
+        window.sysAlert("Failed to generate PDF. Check console.");
       } finally {
         actualBtn.innerHTML = '<i data-lucide="download" class="tactical-icon-sm"></i> Export PDF';
         actualBtn.disabled = false;
@@ -939,7 +939,7 @@ export async function renderPacePlans(container) {
     addCleanupListener(btn, 'click', async (e) => {
       const actualBtn = e.target.closest('.btn-delete-plan');
       const planId = parseInt(actualBtn.getAttribute('data-id'));
-      if (confirm('Delete this PACE plan permanently?')) {
+      if (await window.sysConfirm('Delete this PACE plan permanently?')) {
         await db.deletePlan(planId);
         renderPacePlans(container);
       }
@@ -964,7 +964,7 @@ export async function renderPacePlans(container) {
         modalQRShare.showModal();
       } catch (err) {
         console.error("QR Generation failed:", err);
-        alert("Error generating SITREP PDF.");
+        window.sysAlert("Error generating SITREP PDF.");
       }
     });
   });
@@ -1386,7 +1386,7 @@ export async function renderReportingEngine(container) {
     
     // Clear draft
     localStorage.removeItem(`pace_draft_${currentType.toLowerCase()}`);
-    alert(`${currentType} Report Logged!`);
+    window.sysAlert(`${currentType} Report Logged!`);
     initForm(currentType); // Reset form
   });
 
@@ -1402,7 +1402,7 @@ export async function renderReportingEngine(container) {
       await generateReportPDF(currentType, data, compiled);
     } catch (error) {
       console.error("PDF Export failed:", error);
-      alert("Failed to export PDF.");
+      window.sysAlert("Failed to export PDF.");
     } finally {
       exportBtn.innerHTML = '<i data-lucide="download" class="tactical-icon-sm"></i> EXPORT PDF';
       exportBtn.disabled = false;
@@ -1592,7 +1592,7 @@ export async function renderMap(container) {
       layer.on('click', async (e) => {
         if (currentMode !== 'pan') return;
         L.DomEvent.stopPropagation(e);
-        if (confirm(`Delete tactical feature: ${feature.name}?`)) {
+        if (await window.sysConfirm(`Delete tactical feature: ${feature.name}?`)) {
           await db.deleteMapFeature(feature.id);
           map.removeLayer(layer);
         }
