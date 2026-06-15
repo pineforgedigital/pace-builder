@@ -1539,7 +1539,7 @@ export async function renderMap(container) {
       return;
     }
 
-    const map = L.map('map-container', { doubleClickZoom: false }).setView([centerLat, centerLng], initialZoom);
+    const map = L.map('map-container', { doubleClickZoom: false, preferCanvas: true }).setView([centerLat, centerLng], initialZoom);
 
     // Use a high-contrast dark tile layer for the premium tactical UI
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
