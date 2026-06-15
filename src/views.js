@@ -1566,17 +1566,39 @@ export async function renderMap(container) {
     const btnWaypoint = document.getElementById('tool-waypoint');
     const btnLine = document.getElementById('tool-line');
 
-    const updateToolbar = (mode) => {
-      currentMode = mode;
-      btnPan.classList.toggle('active', mode === 'pan');
-      btnWaypoint.classList.toggle('active', mode === 'waypoint');
-      btnLine.classList.toggle('active', mode === 'line');
+    const finishPhaseLine = async () => {
+      if (currentMode === 'line' && activePoints.length > 1) {
+        const name = await promptFeatureName("Enter Phase Line Name:");
+        if (name) {
+          const feature = { type: 'line', name, coordinates: [...activePoints] };
+          const id = await db.addMapFeature(feature);
+          feature.id = id;
+          
+          const line = L.polyline(feature.coordinates, { color: '#ea580c', weight: 4 }).addTo(map).bindTooltip(feature.name, { sticky: true });
+          bindFeatureClick(line, feature);
+        }
+      }
       
-      if (mode !== 'line' && activePolyline) {
+      if (activePolyline) {
+        map.removeLayer(activePolyline);
+        activePolyline = null;
+      }
+      activePoints = [];
+    };
+
+    const updateToolbar = async (mode) => {
+      if (currentMode === 'line' && mode !== 'line' && activePoints.length > 1) {
+        await finishPhaseLine();
+      } else if (mode !== 'line' && activePolyline) {
         map.removeLayer(activePolyline);
         activePolyline = null;
         activePoints = [];
       }
+
+      currentMode = mode;
+      btnPan.classList.toggle('active', mode === 'pan');
+      btnWaypoint.classList.toggle('active', mode === 'waypoint');
+      btnLine.classList.toggle('active', mode === 'line');
       
       mapElement.style.cursor = mode === 'pan' ? 'grab' : 'crosshair';
     };
@@ -1685,19 +1707,7 @@ export async function renderMap(container) {
     // Right-Click (ContextMenu) to finish lines
     map.on('contextmenu', async (e) => {
       if (currentMode === 'line' && activePoints.length > 1) {
-        const name = await promptFeatureName("Enter Phase Line Name:");
-        if (name) {
-          const feature = { type: 'line', name, coordinates: [...activePoints] };
-          const id = await db.addMapFeature(feature);
-          feature.id = id;
-          
-          const line = L.polyline(feature.coordinates, { color: '#ea580c', weight: 4 }).addTo(map).bindTooltip(feature.name, { sticky: true });
-          bindFeatureClick(line, feature);
-        }
-        
-        map.removeLayer(activePolyline);
-        activePolyline = null;
-        activePoints = [];
+        await finishPhaseLine();
         updateToolbar('pan');
       }
     });
