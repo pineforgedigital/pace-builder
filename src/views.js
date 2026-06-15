@@ -1584,9 +1584,18 @@ export async function renderMap(container) {
       });
     };
 
+    const createTacticalIcon = () => {
+      return L.divIcon({
+        className: 'custom-tactical-marker',
+        html: '<div style="background-color: #f97316; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 8px rgba(249,115,22,0.8);"></div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      });
+    };
+
     savedFeatures.forEach(f => {
       if (f.type === 'waypoint') {
-        const marker = L.marker(f.coordinates).addTo(map).bindTooltip(f.name, { permanent: true, direction: 'top' });
+        const marker = L.marker(f.coordinates, { icon: createTacticalIcon() }).addTo(map).bindTooltip(f.name, { permanent: true, direction: 'top' });
         bindFeatureClick(marker, f);
       } else if (f.type === 'line') {
         const line = L.polyline(f.coordinates, { color: '#ea580c', weight: 4 }).addTo(map).bindTooltip(f.name, { sticky: true });
@@ -1606,7 +1615,7 @@ export async function renderMap(container) {
         const id = await db.addMapFeature(feature);
         feature.id = id;
         
-        const marker = L.marker(feature.coordinates).addTo(map).bindTooltip(feature.name, { permanent: true, direction: 'top' });
+        const marker = L.marker(feature.coordinates, { icon: createTacticalIcon() }).addTo(map).bindTooltip(feature.name, { permanent: true, direction: 'top' });
         bindFeatureClick(marker, feature);
         
         updateToolbar('pan'); // auto-switch back to pan
