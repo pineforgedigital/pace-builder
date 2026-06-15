@@ -3,7 +3,7 @@ import * as views from './views.js';
 import { initLocationEngine } from './locationEngine.js';
 import 'leaflet/dist/leaflet.css';
 import { inject as injectAnalytics } from '@vercel/analytics';
-import { inject as injectSpeedInsights } from '@vercel/speed-insights';
+import { injectSpeedInsights } from '@vercel/speed-insights';
 
 // Application State
 const appState = {
