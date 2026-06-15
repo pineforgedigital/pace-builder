@@ -1493,7 +1493,13 @@ export async function renderMap(container) {
         <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 4px;"></div>
         <button id="tool-export" title="Export Image"><i data-lucide="camera"></i></button>
       </div>
-      <div id="map-container" style="width: 100%; height: 60vh; min-height: 400px; background-color: #222;"></div>
+      <div id="map-container" style="width: 100%; height: 60vh; min-height: 400px; background-color: #222; position: relative;">
+        <!-- Hidden Map Key for Export Only -->
+        <div id="map-export-key" style="display: none; position: absolute; bottom: 20px; left: 20px; z-index: 1000; background: rgba(0,0,0,0.8); border: 1px solid var(--primary); border-radius: 8px; padding: 10px; color: #fff; font-family: monospace; font-size: 11px; max-width: 300px; max-height: 80%; overflow: hidden;">
+          <h4 style="margin: 0 0 5px 0; color: var(--primary); font-family: 'Outfit', sans-serif;">Tactical Feature Key</h4>
+          <div id="map-export-key-content"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Map Feature Modal -->
@@ -1618,11 +1624,34 @@ export async function renderMap(container) {
       btnExport.innerHTML = '<i data-lucide="loader" class="spin"></i>';
       if (window.lucide) window.lucide.createIcons();
       
+      const keyOverlay = document.getElementById('map-export-key');
+      const keyContent = document.getElementById('map-export-key-content');
+      
       try {
         if (mapFeatureGroup.getLayers().length > 0) {
           map.fitBounds(mapFeatureGroup.getBounds(), { padding: [50, 50], animate: false });
-          // Wait for tiles to load at new zoom level
           await new Promise(r => setTimeout(r, 1000));
+        }
+
+        // Build the Key
+        const currentFeatures = await db.getAllMapFeatures();
+        if (currentFeatures.length > 0) {
+          let html = '<table style="width: 100%; border-collapse: collapse;">';
+          currentFeatures.forEach(f => {
+            let coordsStr = '';
+            if (f.type === 'waypoint') {
+              coordsStr = `${f.coordinates[0].toFixed(5)}, ${f.coordinates[1].toFixed(5)}`;
+            } else if (f.type === 'line') {
+              coordsStr = `${f.coordinates.length} pts`; // Or just starting point
+            }
+            html += `<tr><td style="padding-right: 10px;"><strong>${f.name}</strong></td><td>${coordsStr}</td></tr>`;
+          });
+          html += '</table>';
+          keyContent.innerHTML = html;
+          keyOverlay.style.display = 'block'; // Show it!
+          
+          // Small delay for DOM to render the key
+          await new Promise(r => setTimeout(r, 100));
         }
 
         const canvas = await html2canvas(mapElement, {
@@ -1639,6 +1668,7 @@ export async function renderMap(container) {
         console.error(err);
         await window.sysAlert("Failed to export map image. Please ensure you are online for external map tiles to render.", "Export Error");
       } finally {
+        keyOverlay.style.display = 'none'; // Hide it again
         btnExport.innerHTML = '<i data-lucide="camera"></i>';
         if (window.lucide) window.lucide.createIcons();
       }
