@@ -1,17 +1,17 @@
-import { db } from './db.js';
+import * as db from './db.js';
 
 /**
  * Minifies a specific plan into a tight JSON string, stripping local IDs
  * and replacing them with the raw data for Air-Gap Handover.
  */
 export async function generateHandoverPayload(planId) {
-  const plan = await db.pacePlans.get(planId);
+  const plan = await db.db.pacePlans.get(planId);
   if (!plan) throw new Error("Plan not found");
 
   const buildSlot = async (slotData) => {
     if (!slotData || !slotData.personnelId || !slotData.radioId) return null;
-    const p = await db.personnel.get(slotData.personnelId);
-    const r = await db.commsLocker.get(slotData.radioId);
+    const p = await db.db.personnel.get(slotData.personnelId);
+    const r = await db.db.commsLocker.get(slotData.radioId);
     if (!p || !r) return null;
     
     // Minify the data structure for the QR code
