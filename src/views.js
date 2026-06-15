@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { Html5Qrcode } from 'html5-qrcode';
 import { generateHandoverPayload, analyzePayload, ingestHandoverPayload } from './qrEngine.js';
 import L from 'leaflet';
+import html2canvas from 'html2canvas';
 
 export function getBandFromFrequency(freqStr) {
   if (typeof freqStr !== 'string') return 'UNKNOWN';
@@ -1489,6 +1490,8 @@ export async function renderMap(container) {
         <button id="tool-pan" class="active" title="Pan Map"><i data-lucide="mouse-pointer-2"></i></button>
         <button id="tool-waypoint" title="Drop Waypoint"><i data-lucide="map-pin"></i></button>
         <button id="tool-line" title="Draw Phase Line"><i data-lucide="activity"></i></button>
+        <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 4px;"></div>
+        <button id="tool-export" title="Export Image"><i data-lucide="camera"></i></button>
       </div>
       <div id="map-container" style="width: 100%; height: 60vh; min-height: 400px; background-color: #222;"></div>
     </div>
@@ -1540,7 +1543,8 @@ export async function renderMap(container) {
 
     // Use a high-contrast dark tile layer for the premium tactical UI
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+      crossOrigin: true
     }).addTo(map);
 
     // Plot all cached GPS pings as small subtle circles instead of big markers
@@ -1606,6 +1610,31 @@ export async function renderMap(container) {
     addCleanupListener(btnPan, 'click', () => updateToolbar('pan'));
     addCleanupListener(btnWaypoint, 'click', () => updateToolbar('waypoint'));
     addCleanupListener(btnLine, 'click', () => updateToolbar('line'));
+
+    const btnExport = document.getElementById('tool-export');
+    addCleanupListener(btnExport, 'click', async () => {
+      btnExport.innerHTML = '<i data-lucide="loader" class="spin"></i>';
+      if (window.lucide) window.lucide.createIcons();
+      
+      try {
+        const canvas = await html2canvas(mapElement, {
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#222'
+        });
+        
+        const link = document.createElement('a');
+        link.download = `tactical_map_export_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (err) {
+        console.error(err);
+        await window.sysAlert("Failed to export map image. Please ensure you are online for external map tiles to render.", "Export Error");
+      } finally {
+        btnExport.innerHTML = '<i data-lucide="camera"></i>';
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
 
     // Render Saved Features
     const savedFeatures = await db.getAllMapFeatures();
