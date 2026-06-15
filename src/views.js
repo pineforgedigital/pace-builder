@@ -1494,8 +1494,8 @@ export async function renderMap(container) {
         <button id="tool-export" title="Export Image"><i data-lucide="camera"></i></button>
       </div>
       <div id="map-container" style="width: 100%; height: 60vh; min-height: 400px; background-color: #222; position: relative;">
-        <!-- Hidden Map Key for Export Only -->
-        <div id="map-export-key" style="display: none; position: absolute; bottom: 20px; left: 20px; z-index: 1000; background: rgba(0,0,0,0.8); border: 1px solid var(--primary); border-radius: 8px; padding: 10px; color: #fff; font-family: monospace; font-size: 11px; max-width: 300px; max-height: 80%; overflow: hidden;">
+        <!-- Permanent Map Key -->
+        <div id="map-export-key" style="position: absolute; bottom: 20px; left: 20px; z-index: 1000; background: rgba(0,0,0,0.8); border: 1px solid var(--primary); border-radius: 8px; padding: 10px; color: #fff; font-family: monospace; font-size: 11px; max-width: 300px; max-height: 80%; overflow: hidden; display: none;">
           <h4 style="margin: 0 0 5px 0; color: var(--primary); font-family: 'Outfit', sans-serif;">Tactical Feature Key</h4>
           <div id="map-export-key-content"></div>
         </div>
@@ -1569,6 +1569,30 @@ export async function renderMap(container) {
 
     const mapFeatureGroup = L.featureGroup().addTo(map);
 
+    const keyOverlay = document.getElementById('map-export-key');
+    const keyContent = document.getElementById('map-export-key-content');
+
+    const updateMapKey = async () => {
+      const currentFeatures = await db.getAllMapFeatures();
+      if (currentFeatures.length > 0) {
+        let html = '<table style="width: 100%; border-collapse: collapse;">';
+        currentFeatures.forEach(f => {
+          let coordsStr = '';
+          if (f.type === 'waypoint') {
+            coordsStr = `${f.coordinates[0].toFixed(5)}, ${f.coordinates[1].toFixed(5)}`;
+          } else if (f.type === 'line') {
+            coordsStr = `${f.coordinates.length} pts`;
+          }
+          html += `<tr><td style="padding-right: 10px;"><strong>${f.name}</strong></td><td>${coordsStr}</td></tr>`;
+        });
+        html += '</table>';
+        keyContent.innerHTML = html;
+        keyOverlay.style.display = 'block';
+      } else {
+        keyOverlay.style.display = 'none';
+      }
+    };
+
     // Drawing Engine State
     let currentMode = 'pan'; // pan, waypoint, line
     let activePolyline = null;
@@ -1588,6 +1612,7 @@ export async function renderMap(container) {
           
           const line = L.polyline(feature.coordinates, { color: '#ea580c', weight: 4 }).addTo(mapFeatureGroup).bindTooltip(feature.name, { permanent: true, direction: 'center' });
           bindFeatureClick(line, feature);
+          updateMapKey();
         }
       }
       
@@ -1633,27 +1658,6 @@ export async function renderMap(container) {
           await new Promise(r => setTimeout(r, 1000));
         }
 
-        // Build the Key
-        const currentFeatures = await db.getAllMapFeatures();
-        if (currentFeatures.length > 0) {
-          let html = '<table style="width: 100%; border-collapse: collapse;">';
-          currentFeatures.forEach(f => {
-            let coordsStr = '';
-            if (f.type === 'waypoint') {
-              coordsStr = `${f.coordinates[0].toFixed(5)}, ${f.coordinates[1].toFixed(5)}`;
-            } else if (f.type === 'line') {
-              coordsStr = `${f.coordinates.length} pts`; // Or just starting point
-            }
-            html += `<tr><td style="padding-right: 10px;"><strong>${f.name}</strong></td><td>${coordsStr}</td></tr>`;
-          });
-          html += '</table>';
-          keyContent.innerHTML = html;
-          keyOverlay.style.display = 'block'; // Show it!
-          
-          // Small delay for DOM to render the key
-          await new Promise(r => setTimeout(r, 100));
-        }
-
         const canvas = await html2canvas(mapElement, {
           useCORS: true,
           allowTaint: false,
@@ -1668,7 +1672,6 @@ export async function renderMap(container) {
         console.error(err);
         await window.sysAlert("Failed to export map image. Please ensure you are online for external map tiles to render.", "Export Error");
       } finally {
-        keyOverlay.style.display = 'none'; // Hide it again
         btnExport.innerHTML = '<i data-lucide="camera"></i>';
         if (window.lucide) window.lucide.createIcons();
       }
@@ -1684,6 +1687,7 @@ export async function renderMap(container) {
         if (await window.sysConfirm(`Delete tactical feature: ${feature.name}?`)) {
           await db.deleteMapFeature(feature.id);
           mapFeatureGroup.removeLayer(layer);
+          updateMapKey();
         }
       });
     };
@@ -1706,6 +1710,8 @@ export async function renderMap(container) {
         bindFeatureClick(line, f);
       }
     });
+
+    updateMapKey(); // Initial render
 
     const modalFeature = container.querySelector('#modal-map-feature');
     const formFeature = container.querySelector('#form-map-feature');
@@ -1757,6 +1763,7 @@ export async function renderMap(container) {
         
         const marker = L.marker(feature.coordinates, { icon: createTacticalIcon() }).addTo(mapFeatureGroup).bindTooltip(feature.name, { permanent: true, direction: 'top' });
         bindFeatureClick(marker, feature);
+        updateMapKey();
         
         updateToolbar('pan'); // auto-switch back to pan
       }
