@@ -84,7 +84,7 @@ function setupNetworkListeners() {
 // Navigation Event Handlers
 function setupNavigation() {
   document.querySelectorAll('[data-target]').forEach(link => {
-    link.addEventListener('click', (e) => {
+    link.addEventListener('click', async (e) => {
       e.preventDefault();
       const targetView = e.currentTarget.getAttribute('data-target');
       
