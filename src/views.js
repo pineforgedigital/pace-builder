@@ -1516,8 +1516,8 @@ export async function renderMap(container) {
 
     const map = L.map('map-container').setView([centerLat, centerLng], initialZoom);
 
-    // Use a modern, colorful tile layer for the new UI
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    // Use a high-contrast dark tile layer for the premium tactical UI
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
     }).addTo(map);
 
