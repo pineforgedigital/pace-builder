@@ -1561,6 +1561,8 @@ export async function renderMap(container) {
       .bindPopup(`<b>GPS Ping</b><br>${date}<br>Acc: ${Math.round(loc.accuracy)}m`);
     });
 
+    const mapFeatureGroup = L.featureGroup().addTo(map);
+
     // Drawing Engine State
     let currentMode = 'pan'; // pan, waypoint, line
     let activePolyline = null;
@@ -1578,7 +1580,7 @@ export async function renderMap(container) {
           const id = await db.addMapFeature(feature);
           feature.id = id;
           
-          const line = L.polyline(feature.coordinates, { color: '#ea580c', weight: 4 }).addTo(map).bindTooltip(feature.name, { sticky: true });
+          const line = L.polyline(feature.coordinates, { color: '#ea580c', weight: 4 }).addTo(mapFeatureGroup).bindTooltip(feature.name, { permanent: true, direction: 'center' });
           bindFeatureClick(line, feature);
         }
       }
@@ -1617,6 +1619,12 @@ export async function renderMap(container) {
       if (window.lucide) window.lucide.createIcons();
       
       try {
+        if (mapFeatureGroup.getLayers().length > 0) {
+          map.fitBounds(mapFeatureGroup.getBounds(), { padding: [50, 50], animate: false });
+          // Wait for tiles to load at new zoom level
+          await new Promise(r => setTimeout(r, 1000));
+        }
+
         const canvas = await html2canvas(mapElement, {
           useCORS: true,
           allowTaint: false,
@@ -1645,7 +1653,7 @@ export async function renderMap(container) {
         L.DomEvent.stopPropagation(e);
         if (await window.sysConfirm(`Delete tactical feature: ${feature.name}?`)) {
           await db.deleteMapFeature(feature.id);
-          map.removeLayer(layer);
+          mapFeatureGroup.removeLayer(layer);
         }
       });
     };
@@ -1661,10 +1669,10 @@ export async function renderMap(container) {
 
     savedFeatures.forEach(f => {
       if (f.type === 'waypoint') {
-        const marker = L.marker(f.coordinates, { icon: createTacticalIcon() }).addTo(map).bindTooltip(f.name, { permanent: true, direction: 'top' });
+        const marker = L.marker(f.coordinates, { icon: createTacticalIcon() }).addTo(mapFeatureGroup).bindTooltip(f.name, { permanent: true, direction: 'top' });
         bindFeatureClick(marker, f);
       } else if (f.type === 'line') {
-        const line = L.polyline(f.coordinates, { color: '#ea580c', weight: 4 }).addTo(map).bindTooltip(f.name, { sticky: true });
+        const line = L.polyline(f.coordinates, { color: '#ea580c', weight: 4 }).addTo(mapFeatureGroup).bindTooltip(f.name, { permanent: true, direction: 'center' });
         bindFeatureClick(line, f);
       }
     });
@@ -1717,7 +1725,7 @@ export async function renderMap(container) {
         const id = await db.addMapFeature(feature);
         feature.id = id;
         
-        const marker = L.marker(feature.coordinates, { icon: createTacticalIcon() }).addTo(map).bindTooltip(feature.name, { permanent: true, direction: 'top' });
+        const marker = L.marker(feature.coordinates, { icon: createTacticalIcon() }).addTo(mapFeatureGroup).bindTooltip(feature.name, { permanent: true, direction: 'top' });
         bindFeatureClick(marker, feature);
         
         updateToolbar('pan'); // auto-switch back to pan
