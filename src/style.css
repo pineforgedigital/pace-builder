@@ -50,11 +50,20 @@ h1 {
   font-weight: 700;
   margin: 0;
   color: var(--text-main);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 nav {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+nav::-webkit-scrollbar {
+  display: none;
 }
 
 nav a {
@@ -67,6 +76,8 @@ nav a {
   padding: 0.5rem 1rem;
   border-radius: 8px;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 nav a:hover, nav a.active {
@@ -81,6 +92,8 @@ nav a:hover, nav a.active {
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.05em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .status-online {
