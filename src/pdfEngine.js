@@ -1,6 +1,8 @@
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
+import QRCode from 'qrcode';
 import { db } from './db.js';
+import { generateHandoverPayload } from './qrEngine.js';
 
 // Configure virtual file system for fonts
 if (pdfFonts && pdfFonts.pdfMake) {
@@ -145,17 +147,56 @@ export async function generatePacePDF(planId) {
   });
 
   // Notes Section
-  content.push({ text: 'Operational Notes:', style: 'notesHeader' });
+  content.push({ text: 'Operational Notes & RV Points:', style: 'notesHeader' });
   const notesBody = [];
-  if (primaryData.notes) notesBody.push(`Primary: ${primaryData.notes}`);
-  if (alternateData.notes) notesBody.push(`Alternate: ${alternateData.notes}`);
-  if (contingencyData.notes) notesBody.push(`Contingency: ${contingencyData.notes}`);
-  if (emergencyData.notes) notesBody.push(`Emergency: ${emergencyData.notes}`);
+  
+  const formatNote = (slotName, data) => {
+    let noteText = data.notes || '';
+    let rvText = data.personnel?.rendezvousPoint || '';
+    if (!noteText && !rvText) return null;
+    let combined = `${slotName}: `;
+    if (noteText) combined += `${noteText} `;
+    if (rvText) combined += `[RV: ${rvText}]`;
+    return combined.trim();
+  };
+
+  const pNote = formatNote('Primary', primaryData);
+  if (pNote) notesBody.push(pNote);
+  
+  const aNote = formatNote('Alternate', alternateData);
+  if (aNote) notesBody.push(aNote);
+  
+  const cNote = formatNote('Contingency', contingencyData);
+  if (cNote) notesBody.push(cNote);
+  
+  const eNote = formatNote('Emergency', emergencyData);
+  if (eNote) notesBody.push(eNote);
   
   if (notesBody.length > 0) {
     content.push({ ul: notesBody, margin: [0, 5, 0, 0] });
   } else {
     content.push({ text: 'None', italics: true, margin: [0, 5, 0, 0] });
+  }
+
+  // Generate QR Code for Air-Gap Handover
+  try {
+    const payloadStr = await generateHandoverPayload(planId);
+    const qrDataUrl = await QRCode.toDataURL(payloadStr, { width: 150, margin: 1 });
+    
+    content.push({
+      columns: [
+        { 
+          text: 'Air-Gap Handover:\nScan with Pace Builder app to securely import this PACE plan without an internet connection.', 
+          width: '*', 
+          style: 'qrCaption', 
+          margin: [0, 20, 0, 0] 
+        },
+        { image: qrDataUrl, width: 80, alignment: 'right' }
+      ],
+      margin: [0, 30, 0, 0]
+    });
+  } catch (err) {
+    console.error("Failed to generate QR for PDF", err);
   }
 
   // Classification Footer
@@ -222,6 +263,11 @@ export async function generatePacePDF(planId) {
         bold: true,
         color: '#1a1a1a',
         margin: [0, 10, 0, 8]
+      },
+      qrCaption: {
+        fontSize: 9,
+        italics: true,
+        color: '#555555'
       }
     },
     defaultStyle: {
