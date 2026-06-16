@@ -661,6 +661,7 @@ export async function renderPacePlans(container) {
       <li class="plan-list-item">
         <span><strong>${p.planName}</strong><br><small class="text-muted">${p.scenarioType}</small></span>
         <div class="plan-actions">
+          <button type="button" class="btn btn-secondary btn-edit-plan btn-sm" data-id="${p.id}"><i data-lucide="edit" class="tactical-icon-sm"></i> Edit</button>
           <button type="button" class="btn share-qr-btn inverted btn-sm" data-id="${p.id}"><i data-lucide="qr-code" class="tactical-icon-sm"></i> Share QR</button>
           <button type="button" class="btn btn-secondary export-pdf-btn btn-sm" data-id="${p.id}"><i data-lucide="download" class="tactical-icon-sm"></i> Export PDF</button>
           <button type="button" class="btn btn-danger btn-delete-plan btn-sm" data-id="${p.id}">Delete</button>
@@ -723,7 +724,7 @@ export async function renderPacePlans(container) {
           
           <div id="pace-slots-container"></div>
           
-          <button type="submit" class="btn btn-primary">Save Plan</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-plan">Save Plan</button>
         </form>
       </div>
     </div>
@@ -944,6 +945,7 @@ export async function renderPacePlans(container) {
   const paceForm = container.querySelector('#form-pace');
   addCleanupListener(paceForm, 'submit', async (e) => {
     e.preventDefault();
+    const editId = paceForm.dataset.editId ? parseInt(paceForm.dataset.editId) : null;
     
     // Check for active warnings
     const warnings = container.querySelectorAll('.validation-warning-banner');
@@ -976,10 +978,55 @@ export async function renderPacePlans(container) {
       emergencySlot: getSlotData('emergency')
     };
 
+    if (editId) {
+      plan.id = editId;
+    }
+
     await db.savePlan(plan);
     renderPacePlans(container); // Re-render to update the list
     
-    window.sysAlert("PACE Plan Saved Successfully!");
+    window.sysAlert(editId ? "PACE Plan Updated Successfully!" : "PACE Plan Saved Successfully!");
+  });
+
+  // Edit Plan Handlers
+  container.querySelectorAll('.btn-edit-plan').forEach(btn => {
+    addCleanupListener(btn, 'click', async (e) => {
+      const actualBtn = e.target.closest('.btn-edit-plan');
+      const id = parseInt(actualBtn.getAttribute('data-id'));
+      const plan = plans.find(p => p.id === id);
+      if (plan) {
+        document.getElementById('pace-name').value = plan.planName || '';
+        document.getElementById('pace-scenario').value = plan.scenarioType || 'Grid-Down / Blackout';
+        document.getElementById('pace-ncs').value = plan.ncs || '';
+        document.getElementById('pace-schedule').value = plan.schedule || '';
+        document.getElementById('pace-crypto').value = plan.crypto || '';
+        document.getElementById('pace-fallback').value = plan.fallback || '';
+        document.getElementById('pace-infra').value = plan.infrastructureStatus || '';
+        
+        const setSlotData = (slotName, slotData) => {
+          if (!slotData) return;
+          const slotEl = container.querySelector(`.pace-slot[data-slot="${slotName}"]`);
+          if (slotEl) {
+            slotEl.querySelector('.personnel-select').value = slotData.personnelId || '';
+            slotEl.querySelector('.radio-select').value = slotData.radioId || '';
+            slotEl.querySelector('.frequency-input').value = slotData.assignedFrequency || '';
+            slotEl.querySelector('.slot-notes').value = slotData.notes || '';
+          }
+        };
+        
+        setSlotData('primary', plan.primarySlot);
+        setSlotData('alternate', plan.alternateSlot);
+        setSlotData('contingency', plan.contingencySlot);
+        setSlotData('emergency', plan.emergencySlot);
+        
+        paceForm.dataset.editId = id;
+        const submitBtn = document.getElementById('btn-submit-plan');
+        submitBtn.textContent = 'Update Plan';
+        submitBtn.classList.add('pulse');
+        setTimeout(() => submitBtn.classList.remove('pulse'), 1000);
+        paceForm.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
   });
 
   // Export PDF Buttons
