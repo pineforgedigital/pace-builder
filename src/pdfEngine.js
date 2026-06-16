@@ -349,7 +349,6 @@ export async function generateReportPDF(reportType, rawPayload, compiledScript) 
       teleprompter: {
         fontSize: 12,
         bold: true,
-        font: 'Courier',
         background: '#eeeeee',
         padding: 10,
         margin: [0, 5, 0, 0]
