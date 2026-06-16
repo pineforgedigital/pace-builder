@@ -181,7 +181,7 @@ export async function generatePacePDF(planId) {
   // Generate QR Code for Air-Gap Handover
   try {
     const payloadStr = await generateHandoverPayload(planId);
-    const qrDataUrl = await QRCode.toDataURL(payloadStr, { width: 150, margin: 1 });
+    const qrDataUrl = await QRCode.toDataURL(payloadStr, { width: 400, margin: 1 });
     
     content.push({
       columns: [
@@ -189,9 +189,9 @@ export async function generatePacePDF(planId) {
           text: 'Air-Gap Handover:\nScan with Pace Builder app to securely import this PACE plan without an internet connection.', 
           width: '*', 
           style: 'qrCaption', 
-          margin: [0, 20, 0, 0] 
+          margin: [0, 50, 0, 0] 
         },
-        { image: qrDataUrl, width: 80, alignment: 'right' }
+        { image: qrDataUrl, width: 180, alignment: 'right' }
       ],
       margin: [0, 30, 0, 0]
     });
