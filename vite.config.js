@@ -8,8 +8,8 @@ export default defineConfig({
       useCredentials: true,
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'favicon.svg'],
       manifest: {
-        name: 'PACE Protocol Builder',
-        short_name: 'PACE Builder',
+        name: 'PACE Builder',
+        short_name: 'PACE',
         description: 'Offline-first disaster communication planning utility.',
         theme_color: '#121212',
         background_color: '#121212',
@@ -17,14 +17,10 @@ export default defineConfig({
         orientation: 'portrait-primary',
         icons: [
           {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
+            src: 'icon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any maskable'
           }
         ]
       },
