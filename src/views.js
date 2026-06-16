@@ -1579,6 +1579,15 @@ export async function renderSettings(container) {
         <button type="submit" class="btn btn-primary" id="btn-save-settings">Save Settings</button>
       </form>
     </div>
+
+    <div class="panel" style="margin-top: 2rem;">
+      <h3>Legal & Privacy</h3>
+      <p class="text-muted" style="margin-bottom: 1rem;">View our data policies and terms of usage.</p>
+      <div style="display: flex; gap: 1rem;">
+        <button class="btn btn-secondary" id="btn-privacy">Privacy Policy</button>
+        <button class="btn btn-secondary" id="btn-tos">Terms of Service</button>
+      </div>
+    </div>
   `;
 
   const form = container.querySelector('#form-settings');
@@ -1601,8 +1610,62 @@ export async function renderSettings(container) {
         btn.disabled = false;
         btn.className = 'btn btn-primary';
       }, 2000);
-    }, 500);
+    }, 1000);
   });
+
+  const showLegalModal = (title, htmlContent) => {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'global-modal';
+    dialog.style.maxWidth = '600px';
+    dialog.style.maxHeight = '80vh';
+    dialog.style.overflowY = 'auto';
+    dialog.style.padding = '2rem';
+    
+    dialog.innerHTML = `
+      <h3 style="margin-top:0; color: var(--text-main); font-family: var(--font-heading); border-bottom: 1px solid var(--surface-border); padding-bottom: 1rem; margin-bottom: 1rem;">${title}</h3>
+      <div style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">
+        ${htmlContent}
+      </div>
+      <div style="display: flex; justify-content: flex-end;">
+        <button class="btn btn-primary btn-close">Close</button>
+      </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    dialog.showModal();
+    
+    dialog.querySelector('.btn-close').addEventListener('click', () => {
+      dialog.close();
+      dialog.remove();
+    });
+  };
+
+  const privacyBtn = container.querySelector('#btn-privacy');
+  if(privacyBtn) {
+    addCleanupListener(privacyBtn, 'click', () => {
+      showLegalModal("Privacy Policy", `
+        <p><strong>Offline-First Data Storage</strong></p>
+        <p>PACE Builder is designed with strict data privacy in mind. This application functions entirely offline-first. All operational data, personnel files, comms settings, and PACE plans you generate are stored <strong>locally on your device</strong> within your browser's IndexedDB database.</p>
+        <p><strong>Data Collection & Tracking</strong></p>
+        <p>We do not remotely track, collect, upload, or have access to any of the sensitive operational data you input into this application. "What happens on your device, stays on your device."</p>
+        <p>We use standard web analytics (like Vercel Analytics) to track anonymized page views and general performance metrics purely for maintenance and improvement of the application wrapper itself. This data never includes user input.</p>
+      `);
+    });
+  }
+
+  const tosBtn = container.querySelector('#btn-tos');
+  if(tosBtn) {
+    addCleanupListener(tosBtn, 'click', () => {
+      showLegalModal("Terms of Service", `
+        <p><strong>1. Acceptance of Terms</strong></p>
+        <p>By using PACE Builder, you agree to these Terms. If you do not agree, do not use the tool.</p>
+        <p><strong>2. No Liability for Tactical Use</strong></p>
+        <p>PACE Builder is provided "as-is" as a planning and administrative utility. The developers assume <strong>NO LIABILITY</strong> for mission failure, communication loss, injury, or death resulting from the use of this application in real-world scenarios. You are solely responsible for validating all comms plans and ensuring your equipment functions properly in the field.</p>
+        <p><strong>3. Data Security Responsibility</strong></p>
+        <p>Because all data is stored locally on your device, you are entirely responsible for the physical security of your device and the operational security of the exported PDFs/files.</p>
+      `);
+    });
+  }
 }
 
 // --- Tactical Map ---
