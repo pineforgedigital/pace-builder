@@ -1588,6 +1588,10 @@ export async function renderSettings(container) {
         <button class="btn btn-secondary" id="btn-tos">Terms of Service</button>
       </div>
     </div>
+    
+    <div style="text-align: center; margin-top: 3rem; color: var(--text-muted); font-size: 0.85rem; letter-spacing: 0.05em; opacity: 0.6;">
+      BUILT AND DESIGNED BY <strong style="color: var(--primary-accent);">PINEFORGE DIGITAL</strong>
+    </div>
   `;
 
   const form = container.querySelector('#form-settings');
