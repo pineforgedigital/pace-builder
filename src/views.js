@@ -125,23 +125,35 @@ export async function renderDashboard(container) {
     ${alertsHtml}
     
     <div class="grid-2">
-      <div class="panel">
-        <h3>Asset Quick-Stats</h3>
-        <ul class="quick-stats-list">
-          <li><i data-lucide="radio" class="tactical-icon"></i> Total Radios: <strong>${radios.length}</strong></li>
-          <li><i data-lucide="users" class="tactical-icon"></i> Personnel Active: <strong>${personnel.length}</strong></li>
-          <li><i data-lucide="file-text" class="tactical-icon"></i> Total Plans: <strong>${plans.length}</strong></li>
-        </ul>
+      <div class="panel panel-accent">
+        <h3>Asset Overview</h3>
+        <div class="metric-grid">
+          <div class="metric-card nav-jump" data-target="comms">
+            <i data-lucide="radio" class="tactical-icon-lg metric-icon"></i>
+            <span class="metric-value">${radios.length}</span>
+            <span class="metric-label">Radios</span>
+          </div>
+          <div class="metric-card nav-jump" data-target="personnel">
+            <i data-lucide="users" class="tactical-icon-lg metric-icon"></i>
+            <span class="metric-value">${personnel.length}</span>
+            <span class="metric-label">Personnel</span>
+          </div>
+          <div class="metric-card nav-jump" data-target="plans">
+            <i data-lucide="file-text" class="tactical-icon-lg metric-icon"></i>
+            <span class="metric-value">${plans.length}</span>
+            <span class="metric-label">Plans</span>
+          </div>
+        </div>
         
-        <h3>Quick Actions</h3>
+        <h3 style="margin-top: 2rem;">Quick Actions</h3>
         <div class="quick-actions-col">
-          <button class="btn nav-jump" data-target="personnel">Manage Personnel</button>
-          <button class="btn nav-jump" data-target="comms">Manage Comms Locker</button>
+          <button class="btn btn-secondary nav-jump" data-target="personnel">Manage Personnel</button>
+          <button class="btn btn-secondary nav-jump" data-target="comms">Manage Comms</button>
           <button class="btn btn-primary nav-jump" data-target="plans">Create PACE Plan</button>
         </div>
       </div>
       
-      <div class="panel">
+      <div class="panel panel-accent">
         <h3>Recent Active Plans</h3>
         ${recentPlansHtml}
       </div>

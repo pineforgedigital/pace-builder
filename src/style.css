@@ -112,6 +112,12 @@ main {
   border: 1px solid var(--surface-border);
   box-shadow: none;
   margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel-accent {
+  border-top: 2px solid var(--accent-action);
 }
 
 h2 {
@@ -319,7 +325,61 @@ dialog::backdrop {
 }
 
 .empty-state-box-sm {
-  padding: 2rem 1rem;
+  padding: 2rem 1.5rem;
+}
+
+/* Dashboard Metric Cards */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.metric-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-2px);
+  border-color: rgba(249, 115, 22, 0.3); /* orange tint */
+}
+
+.metric-card:active {
+  transform: scale(0.97);
+}
+
+.metric-icon {
+  color: var(--accent-action);
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+.metric-value {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.metric-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .empty-state-text {
