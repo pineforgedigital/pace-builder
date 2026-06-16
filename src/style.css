@@ -67,7 +67,7 @@ nav {
   scrollbar-width: none;
   -ms-overflow-style: none;
   flex-grow: 1;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 nav::-webkit-scrollbar {
