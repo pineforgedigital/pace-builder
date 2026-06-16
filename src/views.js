@@ -9,7 +9,8 @@ import html2canvas from 'html2canvas';
 export function getBandFromFrequency(freqStr) {
   if (typeof freqStr !== 'string') return 'UNKNOWN';
   const cleaned = freqStr.replace(/[^0-9.]/g, '');
-  if (!cleaned) return 'UNKNOWN';
+  if (!cleaned || cleaned.split('.').length > 2) return 'UNKNOWN';
+  
   const val = parseFloat(cleaned);
   if (isNaN(val)) return 'UNKNOWN';
   
@@ -994,10 +995,19 @@ export async function renderPacePlans(container) {
       plan.id = editId;
     }
 
-    await db.savePlan(plan);
-    renderPacePlans(container); // Re-render to update the list
-    
-    window.sysAlert(editId ? "PACE Plan Updated Successfully!" : "PACE Plan Saved Successfully!");
+    const submitBtn = paceForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'PROCESSING...';
+
+    try {
+      await db.savePlan(plan);
+      renderPacePlans(container); // Re-render to update the list
+      window.sysAlert(editId ? "PACE Plan Updated Successfully!" : "PACE Plan Saved Successfully!");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
   });
 
   // Edit Plan Handlers
@@ -1451,7 +1461,7 @@ export async function renderReportingEngine(container) {
         form.querySelectorAll('.tactical-toggle-btn').forEach(btn => {
           const name = btn.getAttribute('data-name');
           const val = btn.getAttribute('data-val');
-          if (parsed[name] && parsed[name].includes(val)) {
+          if (parsed[name] && Array.isArray(parsed[name]) && parsed[name].includes(val)) {
             btn.classList.add('active');
           }
         });
@@ -1500,21 +1510,30 @@ export async function renderReportingEngine(container) {
   });
 
   addCleanupListener(logBtn, 'click', async () => {
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
-    const compiled = teleprompter.textContent;
+    logBtn.disabled = true;
+    const originalText = logBtn.textContent;
+    logBtn.textContent = 'PROCESSING...';
     
-    await db.addTacticalReport({
-      timestamp: Date.now(),
-      reportType: currentType,
-      rawPayload: data,
-      compiledScript: compiled
-    });
-    
-    // Clear draft
-    localStorage.removeItem(`pace_draft_${currentType.toLowerCase()}`);
-    window.sysAlert(`${currentType} Report Logged!`);
-    initForm(currentType); // Reset form
+    try {
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+      const compiled = teleprompter.textContent;
+      
+      await db.addTacticalReport({
+        timestamp: Date.now(),
+        reportType: currentType,
+        rawPayload: data,
+        compiledScript: compiled
+      });
+      
+      // Clear draft
+      localStorage.removeItem(`pace_draft_${currentType.toLowerCase()}`);
+      window.sysAlert(`${currentType} Report Logged!`);
+      initForm(currentType); // Reset form
+    } finally {
+      logBtn.disabled = false;
+      logBtn.textContent = originalText;
+    }
   });
 
   const exportBtn = document.getElementById('btn-export-report-pdf');

@@ -15,12 +15,12 @@ if (pdfFonts && pdfFonts.pdfMake) {
  * Resolves Personnel and Radio data for a specific slot.
  */
 async function resolveSlotData(slotConfig) {
-  if (!slotConfig || !slotConfig.personnelId || !slotConfig.radioId) {
-    return { personnel: null, radio: null, notes: slotConfig?.notes || '' };
+  if (!slotConfig) {
+    return { personnel: null, radio: null, notes: '' };
   }
   
-  const personnel = await db.personnel.get(slotConfig.personnelId);
-  const radio = await db.commsLocker.get(slotConfig.radioId);
+  const personnel = slotConfig.personnelId ? await db.personnel.get(slotConfig.personnelId) : null;
+  const radio = slotConfig.radioId ? await db.commsLocker.get(slotConfig.radioId) : null;
   
   return { personnel, radio, notes: slotConfig.notes || '' };
 }
