@@ -26,7 +26,7 @@ const updateSW = registerSW({
       if (Notification && Notification.permission === 'granted') {
         new Notification('🟢 UPLINK ESTABLISHED', {
           body: 'Signal acquired. Checking for PACE Builder updates...',
-          icon: '/favicon.svg'
+          icon: '/pwa-192x192.png'
         });
       }
 
@@ -193,7 +193,7 @@ setInterval(() => {
       if (now >= alarm.timestamp) {
         new Notification('⚠️ COMM WINDOW ACTIVE', {
           body: `Scheduled Comms Window for ${alarm.planName} is now active.`,
-          icon: '/favicon.svg'
+          icon: '/pwa-192x192.png'
         });
         fired = true;
       } else {
