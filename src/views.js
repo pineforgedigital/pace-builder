@@ -1136,7 +1136,7 @@ export async function renderPacePlans(container) {
         
         dialog.close();
         dialog.remove();
-        window.sysAlert(\`Alarm set for \${new Date(timestamp).toLocaleTimeString()}.\`, "Alarm Scheduled");
+        window.sysAlert(`Alarm set for ${new Date(timestamp).toLocaleTimeString()}.`, "Alarm Scheduled");
       });
     });
   });
