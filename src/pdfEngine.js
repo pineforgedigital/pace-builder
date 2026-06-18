@@ -201,8 +201,6 @@ export async function generatePacePDF(planId) {
     console.error("Failed to generate QR for PDF", err);
   }
 
-  const classificationLabel = await db.getSetting('pdfClassification') || 'UNCLASSIFIED // FOR OFFICIAL USE ONLY';
-
   // Classification Footer
   content.push({ text: classificationLabel, style: 'classification', margin: [0, 20, 0, 0] });
 
