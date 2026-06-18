@@ -189,6 +189,11 @@ input, select, textarea {
   transition: all 0.2s ease;
 }
 
+select option {
+  background-color: var(--surface-solid);
+  color: var(--text-main);
+}
+
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--accent-action);
