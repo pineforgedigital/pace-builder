@@ -4,6 +4,38 @@ import { initLocationEngine } from './locationEngine.js';
 import 'leaflet/dist/leaflet.css';
 import { inject as injectAnalytics } from '@vercel/analytics';
 import { injectSpeedInsights } from '@vercel/speed-insights';
+import { registerSW } from 'virtual:pwa-register';
+
+// PWA Auto-Update & Connection Polling
+const updateSW = registerSW({
+  immediate: true,
+  onRegisteredSW(swUrl, r) {
+    // 1. Constantly ping for the latest version while online (every 60 seconds)
+    r && setInterval(async () => {
+      if (!(!r.installing && navigator)) return;
+      if (('connection' in navigator) && !navigator.onLine) return;
+      
+      try {
+        const resp = await fetch(swUrl, { cache: 'no-store', headers: { 'cache': 'no-store', 'cache-control': 'no-cache' } });
+        if (resp?.status === 200) await r.update();
+      } catch (err) { /* offline or failed ping */ }
+    }, 60000);
+
+    // 2. Ping immediately when internet connection is re-established
+    window.addEventListener('online', async () => {
+      if (r) {
+        try {
+          const resp = await fetch(swUrl, { cache: 'no-store', headers: { 'cache': 'no-store', 'cache-control': 'no-cache' } });
+          if (resp?.status === 200) await r.update();
+        } catch (err) { /* failed ping */ }
+      }
+    });
+  },
+  onNeedRefresh() {
+    // Force a reload when the SW detects and downloads a new version
+    window.location.reload(true);
+  }
+});
 
 window.sysAlert = (message, title = "System Alert") => {
   return new Promise((resolve) => {
