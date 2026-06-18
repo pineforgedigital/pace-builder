@@ -23,6 +23,13 @@ const updateSW = registerSW({
 
     // 2. Ping immediately when internet connection is re-established
     window.addEventListener('online', async () => {
+      if (Notification && Notification.permission === 'granted') {
+        new Notification('🟢 UPLINK ESTABLISHED', {
+          body: 'Signal acquired. Checking for PACE Builder updates...',
+          icon: '/favicon.svg'
+        });
+      }
+
       if (r) {
         try {
           const resp = await fetch(swUrl, { cache: 'no-store', headers: { 'cache': 'no-store', 'cache-control': 'no-cache' } });
@@ -168,4 +175,34 @@ async function loadView(viewName) {
   if (window.lucide) window.lucide.createIcons();
 }
 
+// ============================================================================
+// NOTIFICATION SYSTEM & COMM WINDOW TRACKER
+// ============================================================================
+if (Notification && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
 
+setInterval(() => {
+  if (Notification && Notification.permission === 'granted') {
+    const alarms = JSON.parse(localStorage.getItem('pace_alarms') || '[]');
+    const now = new Date().getTime();
+    let updatedAlarms = [];
+    let fired = false;
+
+    alarms.forEach(alarm => {
+      if (now >= alarm.timestamp) {
+        new Notification('⚠️ COMM WINDOW ACTIVE', {
+          body: `Scheduled Comms Window for ${alarm.planName} is now active.`,
+          icon: '/favicon.svg'
+        });
+        fired = true;
+      } else {
+        updatedAlarms.push(alarm); // keep future alarms
+      }
+    });
+
+    if (fired) {
+      localStorage.setItem('pace_alarms', JSON.stringify(updatedAlarms));
+    }
+  }
+}, 30000); // Check every 30 seconds

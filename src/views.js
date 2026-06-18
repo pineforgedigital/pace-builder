@@ -672,6 +672,7 @@ export async function renderPacePlans(container) {
           <button type="button" class="btn btn-secondary btn-edit-plan btn-sm" data-id="${p.id}"><i data-lucide="edit" class="tactical-icon-sm"></i> Edit</button>
           <button type="button" class="btn share-qr-btn inverted btn-sm" data-id="${p.id}"><i data-lucide="qr-code" class="tactical-icon-sm"></i> Share QR</button>
           <button type="button" class="btn btn-secondary export-pdf-btn btn-sm" data-id="${p.id}"><i data-lucide="download" class="tactical-icon-sm"></i> Export PDF</button>
+          <button type="button" class="btn btn-secondary btn-set-alarm btn-sm" data-id="${p.id}" data-name="${p.planName}"><i data-lucide="bell" class="tactical-icon-sm"></i> Set Alarm</button>
           <button type="button" class="btn btn-danger btn-delete-plan btn-sm" data-id="${p.id}">Delete</button>
         </div>
       </li>
@@ -1075,6 +1076,68 @@ export async function renderPacePlans(container) {
         await db.deletePlan(planId);
         renderPacePlans(container);
       }
+    });
+  });
+
+  // Set Alarm Buttons
+  container.querySelectorAll('.btn-set-alarm').forEach(btn => {
+    addCleanupListener(btn, 'click', (e) => {
+      const actualBtn = e.target.closest('.btn-set-alarm');
+      const planId = parseInt(actualBtn.getAttribute('data-id'));
+      const planName = actualBtn.getAttribute('data-name');
+      
+      const dialog = document.createElement('dialog');
+      dialog.className = 'global-modal';
+      dialog.style.maxWidth = '400px';
+      
+      dialog.innerHTML = `
+        <h3 style="margin-top:0;">Set Comm Window Alarm</h3>
+        <p class="text-muted" style="margin-bottom: 1.5rem;">Schedule a local alarm for <strong>${planName}</strong>. The PACE Builder app must remain active to sound the alarm.</p>
+        <div class="form-group">
+          <label>Alarm Time</label>
+          <input type="datetime-local" id="alarm-datetime" style="width: 100%;">
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: space-between; margin-top: 1.5rem;">
+          <button class="btn cancel-btn" id="btn-cancel-alarm" style="flex: 1;">Cancel</button>
+          <button class="btn btn-primary" id="btn-save-alarm" style="flex: 1;">Set Alarm</button>
+        </div>
+      `;
+      
+      document.body.appendChild(dialog);
+      dialog.showModal();
+      
+      dialog.querySelector('#btn-cancel-alarm').addEventListener('click', () => {
+        dialog.close();
+        dialog.remove();
+      });
+      
+      dialog.querySelector('#btn-save-alarm').addEventListener('click', () => {
+        const dtInput = dialog.querySelector('#alarm-datetime').value;
+        if (!dtInput) {
+          window.sysAlert("Please select a valid date and time.");
+          return;
+        }
+        
+        const timestamp = new Date(dtInput).getTime();
+        if (timestamp < new Date().getTime()) {
+          window.sysAlert("Alarm time must be in the future.");
+          return;
+        }
+
+        if (Notification.permission !== 'granted') {
+          Notification.requestPermission().then(perm => {
+            if (perm !== 'granted') window.sysAlert("Notification permissions are required to set an alarm.");
+          });
+        }
+        
+        const alarms = JSON.parse(localStorage.getItem('pace_alarms') || '[]');
+        alarms.push({ planId, planName, timestamp });
+        localStorage.setItem('pace_alarms', JSON.stringify(alarms));
+        
+        dialog.close();
+        dialog.remove();
+        window.sysAlert(\`Alarm set for \${new Date(timestamp).toLocaleTimeString()}.\`, "Alarm Scheduled");
+      });
     });
   });
 
