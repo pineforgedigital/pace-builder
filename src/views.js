@@ -199,6 +199,26 @@ export async function renderDashboard(container) {
     });
   });
 
+  // Export PDF Buttons on Dashboard
+  container.querySelectorAll('.export-pdf-btn').forEach(btn => {
+    addCleanupListener(btn, 'click', async (e) => {
+      const actualBtn = e.target.closest('.export-pdf-btn');
+      const planId = parseInt(actualBtn.getAttribute('data-id'));
+      actualBtn.textContent = 'Exporting...';
+      actualBtn.disabled = true;
+      try {
+        await generatePacePDF(planId);
+      } catch (error) {
+        console.error("PDF Generation failed:", error);
+        window.sysAlert("Failed to generate PDF. Check console.");
+      } finally {
+        actualBtn.innerHTML = '<i data-lucide="download" class="tactical-icon-sm"></i> Export';
+        actualBtn.disabled = false;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  });
+
   const btnBackup = container.querySelector('#btn-backup');
   addCleanupListener(btnBackup, 'click', async () => {
     await db.exportDatabase();
