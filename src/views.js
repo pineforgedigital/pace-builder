@@ -163,9 +163,6 @@ export async function renderDashboard(container) {
     <div class="panel">
       <h3>Data Portability & Handover</h3>
       <div class="portability-actions">
-        <button class="btn" id="btn-backup"><i data-lucide="save" class="tactical-icon"></i> Backup Data</button>
-        <button class="btn" id="btn-restore"><i data-lucide="upload-cloud" class="tactical-icon"></i> Restore Data</button>
-        <input type="file" id="input-restore" accept=".json" style="display: none;">
         <button class="btn btn-secondary" id="btn-scan-qr"><i data-lucide="scan" class="tactical-icon"></i> Scan Handover</button>
       </div>
     </div>
@@ -219,29 +216,7 @@ export async function renderDashboard(container) {
     });
   });
 
-  const btnBackup = container.querySelector('#btn-backup');
-  addCleanupListener(btnBackup, 'click', async () => {
-    await db.exportDatabase();
-  });
 
-  const btnRestore = container.querySelector('#btn-restore');
-  const inputRestore = container.querySelector('#input-restore');
-  addCleanupListener(btnRestore, 'click', () => {
-    inputRestore.click();
-  });
-
-  addCleanupListener(inputRestore, 'change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      await db.importDatabase(file);
-      window.sysAlert("Database restored successfully.");
-      renderDashboard(container);
-    } catch (err) {
-      console.error(err);
-      window.sysAlert("Failed to restore database. Invalid or corrupted JSON file.");
-    }
-  });
 
   // Scanner & Staging Logic
   const btnScanQR = container.querySelector('#btn-scan-qr');
@@ -1587,6 +1562,8 @@ export async function renderSettings(container) {
   const defaultSchedule = await db.getSetting('defaultSchedule') || '';
   const defaultCrypto = await db.getSetting('defaultCrypto') || '';
   const userCallSign = await db.getSetting('userCallSign') || '';
+  const pdfClassification = await db.getSetting('pdfClassification') || 'UNCLASSIFIED // FOR OFFICIAL USE ONLY';
+  const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0';
 
   container.innerHTML = `
     <h2>Global Settings</h2>
@@ -1615,8 +1592,31 @@ export async function renderSettings(container) {
             <input type="text" id="set-crypto" value="${defaultCrypto}">
           </div>
         </div>
-        <button type="submit" class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label>Default Document Classification</label>
+          <select id="set-classification">
+            <option value="UNCLASSIFIED" ${pdfClassification === 'UNCLASSIFIED' ? 'selected' : ''}>UNCLASSIFIED</option>
+            <option value="UNCLASSIFIED // FOR OFFICIAL USE ONLY" ${pdfClassification === 'UNCLASSIFIED // FOR OFFICIAL USE ONLY' ? 'selected' : ''}>UNCLASSIFIED // FOR OFFICIAL USE ONLY</option>
+            <option value="CONFIDENTIAL" ${pdfClassification === 'CONFIDENTIAL' ? 'selected' : ''}>CONFIDENTIAL</option>
+            <option value="SECRET" ${pdfClassification === 'SECRET' ? 'selected' : ''}>SECRET</option>
+            <option value="TOP SECRET" ${pdfClassification === 'TOP SECRET' ? 'selected' : ''}>TOP SECRET</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" id="btn-save-settings" style="margin-top: 1.5rem;">Save Settings</button>
       </form>
+    </div>
+
+    <div class="panel" style="margin-top: 2rem;">
+      <h3>Data Management</h3>
+      <p class="text-muted" style="margin-bottom: 1rem;">Export your offline data to a JSON backup, or restore a previous state. Warning: Wiping data is irreversible.</p>
+      <div class="portability-actions" style="margin-bottom: 1.5rem;">
+        <button class="btn" id="btn-backup"><i data-lucide="save" class="tactical-icon"></i> Backup Data</button>
+        <button class="btn" id="btn-restore"><i data-lucide="upload-cloud" class="tactical-icon"></i> Restore Data</button>
+        <input type="file" id="input-restore" accept=".json" style="display: none;">
+      </div>
+      <div style="border-top: 1px solid var(--surface-border); padding-top: 1.5rem;">
+        <button class="btn" id="btn-wipe-data" style="background: #aa0000; color: white; border: 1px solid #ff0000;"><i data-lucide="alert-triangle" class="tactical-icon"></i> WIPE ALL DATA</button>
+      </div>
     </div>
 
     <div class="panel" style="margin-top: 2rem;">
@@ -1629,7 +1629,8 @@ export async function renderSettings(container) {
     </div>
     
     <div style="text-align: center; margin-top: 3rem; color: var(--text-muted); font-size: 0.85rem; letter-spacing: 0.05em; opacity: 0.6;">
-      BUILT AND DESIGNED BY <strong style="color: var(--primary-accent);">PINEFORGE DIGITAL</strong>
+      BUILT AND DESIGNED BY <strong style="color: var(--primary-accent);">PINEFORGE DIGITAL</strong><br>
+      <span style="font-family: monospace; font-size: 0.75rem; margin-top: 0.5rem; display: inline-block;">v${appVersion}</span>
     </div>
   `;
 
@@ -1644,6 +1645,7 @@ export async function renderSettings(container) {
     await db.saveSetting('defaultNCS', document.getElementById('set-ncs').value);
     await db.saveSetting('defaultSchedule', document.getElementById('set-schedule').value);
     await db.saveSetting('defaultCrypto', document.getElementById('set-crypto').value);
+    await db.saveSetting('pdfClassification', document.getElementById('set-classification').value);
 
     setTimeout(() => {
       btn.textContent = 'Saved!';
@@ -1654,6 +1656,73 @@ export async function renderSettings(container) {
         btn.className = 'btn btn-primary';
       }, 2000);
     }, 1000);
+  });
+
+  const btnBackup = container.querySelector('#btn-backup');
+  addCleanupListener(btnBackup, 'click', async () => {
+    await db.exportDatabase();
+  });
+
+  const btnRestore = container.querySelector('#btn-restore');
+  const inputRestore = container.querySelector('#input-restore');
+  addCleanupListener(btnRestore, 'click', () => {
+    inputRestore.click();
+  });
+
+  addCleanupListener(inputRestore, 'change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      await db.importDatabase(file);
+      window.sysAlert("Database restored successfully.");
+      renderSettings(container);
+    } catch (err) {
+      console.error(err);
+      window.sysAlert("Failed to restore database. Invalid or corrupted JSON file.");
+    }
+  });
+
+  const btnWipe = container.querySelector('#btn-wipe-data');
+  addCleanupListener(btnWipe, 'click', () => {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'global-modal';
+    dialog.style.maxWidth = '400px';
+    
+    dialog.innerHTML = `
+      <h3 style="color: #ff5500; margin-top: 0; font-family: var(--font-heading);">EMERGENCY DATA WIPE</h3>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">This will irreversibly destroy all local PACE Plans, Tactical Reports, Personnel, and Radio data. This action cannot be undone.</p>
+      <p style="color: var(--text-main); font-size: 0.95rem; font-weight: bold; margin-bottom: 0.5rem; text-align: center;">Type CONFIRM below to execute:</p>
+      <input type="text" id="wipe-confirm-input" style="width: 100%; margin-bottom: 1.5rem; text-align: center; text-transform: uppercase;" autocomplete="off" placeholder="...">
+      <div style="display: flex; gap: 1rem; justify-content: space-between;">
+        <button class="btn cancel-btn" id="btn-cancel-wipe" style="flex: 1;">Cancel</button>
+        <button class="btn" id="btn-execute-wipe" style="flex: 1; background: #a00; color: white; border: 1px solid #f00;" disabled>EXECUTE WIPE</button>
+      </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    dialog.showModal();
+    
+    const input = dialog.querySelector('#wipe-confirm-input');
+    const btnExecute = dialog.querySelector('#btn-execute-wipe');
+    
+    input.addEventListener('input', (e) => {
+      if (e.target.value.toUpperCase() === 'CONFIRM') {
+        btnExecute.disabled = false;
+      } else {
+        btnExecute.disabled = true;
+      }
+    });
+    
+    dialog.querySelector('#btn-cancel-wipe').addEventListener('click', () => {
+      dialog.close();
+      dialog.remove();
+    });
+    
+    btnExecute.addEventListener('click', async () => {
+      dialog.close();
+      dialog.remove();
+      await db.wipeDatabase();
+    });
   });
 
   const showLegalModal = (title, htmlContent) => {

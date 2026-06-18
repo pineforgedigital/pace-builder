@@ -58,9 +58,11 @@ export async function generatePacePDF(planId) {
 
   // 3. Document Definition
   const content = [];
+  
+  const classificationLabel = await db.getSetting('pdfClassification') || 'UNCLASSIFIED // FOR OFFICIAL USE ONLY';
 
   // Header
-  content.push({ text: 'UNCLASSIFIED // FOR OFFICIAL USE ONLY', style: 'classification' });
+  content.push({ text: classificationLabel, style: 'classification' });
   content.push({ text: 'COMMUNICATIONS PLAN (PACE)', style: 'header' });
 
   // Metadata Block
@@ -199,8 +201,10 @@ export async function generatePacePDF(planId) {
     console.error("Failed to generate QR for PDF", err);
   }
 
+  const classificationLabel = await db.getSetting('pdfClassification') || 'UNCLASSIFIED // FOR OFFICIAL USE ONLY';
+
   // Classification Footer
-  content.push({ text: 'UNCLASSIFIED // FOR OFFICIAL USE ONLY', style: 'classification', margin: [0, 20, 0, 0] });
+  content.push({ text: classificationLabel, style: 'classification', margin: [0, 20, 0, 0] });
 
   const docDefinition = {
     content: content,

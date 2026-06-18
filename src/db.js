@@ -236,3 +236,12 @@ export async function importDatabase(file) {
     reader.readAsText(file);
   });
 }
+
+/**
+ * Emergency wipe of the entire local database and caches.
+ */
+export async function wipeDatabase() {
+  await db.delete();
+  localStorage.clear();
+  window.location.reload();
+}
