@@ -584,6 +584,7 @@ input[type="checkbox"] {
   header {
     flex-direction: column;
     padding: 1rem;
+    position: static; /* Let it scroll away on mobile */
   }
   
   header h1 {
